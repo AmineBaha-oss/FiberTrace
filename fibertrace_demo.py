@@ -18,6 +18,7 @@ import sys
 import RPi.GPIO as GPIO
 import json
 import os
+import subprocess
 
 # ------------------------
 # GPIO PIN CONFIG
@@ -110,18 +111,20 @@ def move_gate(angle, servo_pwm):
 def init_camera(camera_index=0):
     """
     Initialize the camera using OpenCV.
-    Tries multiple methods for compatibility with different Pi OS versions.
+    Returns cap object (may be None if OpenCV fails - we'll use rpicam-jpeg fallback).
     """
     cap = None
     
-    # Method 1: Try libcamera with v4l2 backend (newer Pi OS)
+    # Try OpenCV first
     try:
-        cap = cv2.VideoCapture(camera_index, cv2.CAP_V4L2)
+        cap = cv2.VideoCapture(camera_index)
         if cap.isOpened():
             cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
             cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+            # Test if we can actually read a frame
             ret, frame = cap.read()
             if ret and frame is not None:
+                print("✓ Camera initialized with OpenCV")
                 return cap
             else:
                 cap.release()
@@ -131,49 +134,49 @@ def init_camera(camera_index=0):
             cap.release()
         cap = None
     
-    # Method 2: Try standard initialization
+    # If OpenCV failed, we'll use rpicam-jpeg fallback
     if cap is None:
-        try:
-            cap = cv2.VideoCapture(camera_index)
-            if cap.isOpened():
-                cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-                cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-                ret, frame = cap.read()
-                if ret and frame is not None:
-                    return cap
-                else:
-                    cap.release()
-                    cap = None
-        except:
-            if cap:
-                cap.release()
-            cap = None
+        print("⚠️  OpenCV cannot access camera, will use rpicam-jpeg fallback")
     
-    # Method 3: Try camera index 1
-    if cap is None and camera_index == 0:
-        try:
-            cap = cv2.VideoCapture(1)
-            if cap.isOpened():
-                ret, frame = cap.read()
-                if ret and frame is not None:
-                    return cap
-                else:
-                    cap.release()
-                    cap = None
-        except:
-            if cap:
-                cap.release()
-            cap = None
+    return cap  # May be None - that's OK, we have fallback
+
+def capture_frame_fallback(path="frame.jpg"):
+    """
+    Fallback: Use rpicam-jpeg to capture a single frame.
+    Works on Raspberry Pi OS Bookworm when OpenCV can't access /dev/video0.
+    """
+    import subprocess
+    try:
+        # Take 1 snapshot with the Pi camera (1000ms timeout)
+        cmd = ["rpicam-jpeg", "-o", path, "-t", "1000"]
+        subprocess.run(cmd, check=True, capture_output=True, timeout=5)
+        img = cv2.imread(path)
+        if img is not None:
+            return img
+        else:
+            print("ERROR: Could not read image from rpicam-jpeg")
+            return None
+    except subprocess.CalledProcessError as e:
+        print(f"ERROR: rpicam-jpeg failed: {e}")
+        return None
+    except FileNotFoundError:
+        print("ERROR: rpicam-jpeg not found. Install: sudo apt install -y rpicam-apps")
+        return None
+    except Exception as e:
+        print(f"ERROR: rpicam-jpeg exception: {e}")
+        return None
+
+def get_frame(cap):
+    """
+    Get a frame from camera. Tries OpenCV first, falls back to rpicam-jpeg if needed.
+    """
+    if cap is not None and cap.isOpened():
+        ret, frame = cap.read()
+        if ret and frame is not None:
+            return frame
     
-    if cap is None or not cap.isOpened():
-        print("ERROR: Could not open camera. Check connection and index.")
-        print("Troubleshooting:")
-        print("  1. Enable camera: sudo raspi-config → Interface Options → Camera")
-        print("  2. Reboot: sudo reboot")
-        print("  3. Check camera: vcgencmd get_camera")
-        sys.exit(1)
-    
-    return cap
+    # Fallback if cap is None or OpenCV failed
+    return capture_frame_fallback()
 
 def classify_item(frame):
     """
@@ -258,9 +261,9 @@ def main():
         while True:
             input(">>> Press ENTER to SCAN the current item...")
             
-            # Read a single frame
-            ret, frame = cap.read()
-            if not ret:
+            # Read a single frame (uses OpenCV or rpicam-jpeg fallback)
+            frame = get_frame(cap)
+            if frame is None:
                 print("WARNING: Could not read frame from camera.")
                 continue
             
@@ -301,7 +304,8 @@ def main():
         print("Cleaning up GPIO and camera...")
         servo_pwm.stop()
         GPIO.cleanup()
-        cap.release()
+        if cap is not None:
+            cap.release()
         cv2.destroyAllWindows()
 
 if __name__ == "__main__":

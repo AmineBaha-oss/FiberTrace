@@ -168,6 +168,26 @@ def test_camera():
                 cap.release()
             cap = None
     
+    # Method 5: Try rpicam-jpeg fallback (for Bookworm)
+    if cap is None or frame is None:
+        print("  → Trying rpicam-jpeg fallback...")
+        try:
+            cmd = ["rpicam-jpeg", "-o", "test_frame.jpg", "-t", "1000"]
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
+            if result.returncode == 0:
+                frame = cv2.imread("test_frame.jpg")
+                if frame is not None:
+                    print("  ✓ rpicam-jpeg works!")
+                    cap = "rpicam"  # Mark as successful
+                else:
+                    print("  ⚠️  rpicam-jpeg created file but couldn't read it")
+            else:
+                print(f"  ⚠️  rpicam-jpeg failed: {result.stderr}")
+        except FileNotFoundError:
+            print("  ⚠️  rpicam-jpeg not found (install: sudo apt install -y rpicam-apps)")
+        except Exception as e:
+            print(f"  ⚠️  rpicam-jpeg exception: {e}")
+    
     if cap is None or frame is None:
         print("\n❌ ERROR: Could not open camera with any method!")
         print("\nDiagnostics:")
