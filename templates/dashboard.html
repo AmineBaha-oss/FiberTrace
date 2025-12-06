@@ -1,540 +1,807 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>FiberTrace | Industrial IoT Dashboard</title>
     <style>
-        :root {
-            --bg-body: #0f172a;
-            --bg-card: #1e293b;
-            --bg-card-hover: #334155;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --accent-primary: #6366f1;
-            --accent-hover: #4f46e5;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --border: #334155;
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
-            --font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        }
+      :root {
+        --bg-body: #0f172a;
+        --bg-card: #1e293b;
+        --bg-card-hover: #334155;
+        --text-main: #f8fafc;
+        --text-muted: #94a3b8;
+        --accent-primary: #6366f1;
+        --accent-hover: #4f46e5;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --border: #334155;
+        --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+        --font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-        body {
-            background-color: var(--bg-body);
-            color: var(--text-main);
-            font-family: var(--font-family);
-            line-height: 1.5;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
+      body {
+        background: radial-gradient(circle at 50% 0%, #1e293b, var(--bg-body));
+        color: var(--text-main);
+        font-family: var(--font-family);
+        line-height: 1.5;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
 
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-            width: 100%;
-        }
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+        width: 100%;
+      }
 
-        .grid-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 15px;
-        }
+      .grid-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 15px;
+      }
 
-        .grid-metrics {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 20px;
-            margin-bottom: 25px;
-        }
+      .grid-metrics {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 20px;
+        margin-bottom: 25px;
+      }
 
+      .grid-main {
+        display: grid;
+        grid-template-columns: 1.5fr 1fr;
+        gap: 25px;
+        margin-bottom: 25px;
+        min-height: 400px;
+      }
+
+      @media (max-width: 900px) {
         .grid-main {
-            display: grid;
-            grid-template-columns: 1.5fr 1fr;
-            gap: 25px;
-            margin-bottom: 25px;
-            min-height: 400px;
+          grid-template-columns: 1fr;
         }
+      }
 
-        @media (max-width: 900px) {
-            .grid-main { grid-template-columns: 1fr; }
+      h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+      }
+      h2 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        margin-bottom: 15px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .brand-dot {
+        width: 12px;
+        height: 12px;
+        background: var(--accent-primary);
+        border-radius: 50%;
+        box-shadow: 0 0 10px var(--accent-primary);
+      }
+
+      .status-badge {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid rgba(16, 185, 129, 0.2);
+        border-radius: 20px;
+        font-size: 0.85rem;
+        color: var(--success);
+      }
+
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        background: currentColor;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+      }
+
+      .card {
+        background: rgba(30, 41, 59, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: var(--shadow);
+        transition: transform 0.2s, background-color 0.2s, box-shadow 0.2s;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .card:hover {
+        transform: translateY(-2px);
+        background-color: rgba(51, 65, 85, 0.8);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
+      }
+
+      .card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+      }
+
+      .card.blue::before {
+        background: var(--accent-primary);
+      }
+      .card.green::before {
+        background: var(--success);
+      }
+      .card.red::before {
+        background: var(--danger);
+      }
+      .card.purple::before {
+        background: #d946ef;
+      }
+
+      .metric-label {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .metric-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 10px 0;
+        line-height: 1;
+      }
+      .metric-sub {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+      }
+
+      .camera-container {
+        position: relative;
+        width: 100%;
+        height: 300px;
+        background: #000;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .camera-feed {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      .scanning-line {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: var(--success);
+        box-shadow: 0 0 15px var(--success), 0 0 30px var(--success);
+        z-index: 10;
+        display: none;
+        animation: scan 1.5s linear infinite;
+      }
+
+      @keyframes scan {
+        0% {
+          top: 0;
+          opacity: 0;
         }
-
-        h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.5px; }
-        h2 { font-size: 1.1rem; font-weight: 600; color: var(--text-muted); margin-bottom: 15px; }
-
-        .brand { display: flex; align-items: center; gap: 10px; }
-        .brand-dot { width: 12px; height: 12px; background: var(--accent-primary); border-radius: 50%; box-shadow: 0 0 10px var(--accent-primary); }
-
-        .status-badge {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 6px 12px;
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.2);
-            border-radius: 20px;
-            font-size: 0.85rem;
-            color: var(--success);
+        10% {
+          opacity: 1;
         }
-
-        .status-dot { width: 8px; height: 8px; background: currentColor; border-radius: 50%; animation: pulse 2s infinite; }
-
-        .card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: var(--shadow);
-            transition: transform 0.2s, background-color 0.2s;
-            position: relative;
-            overflow: hidden;
+        90% {
+          opacity: 1;
         }
-
-        .card:hover {
-            transform: translateY(-2px);
-            background-color: var(--bg-card-hover);
+        100% {
+          top: 100%;
+          opacity: 0;
         }
+      }
 
-        .card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; width: 4px; height: 100%;
+      .camera-overlay {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        color: var(--success);
+        font-family: monospace;
+      }
+
+      .control-panel {
+        margin-top: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+      }
+
+      .scan-btn {
+        background: linear-gradient(
+          135deg,
+          var(--accent-primary),
+          var(--accent-hover)
+        );
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .scan-btn:hover:not(:disabled) {
+        transform: translateY(-1px);
+        filter: brightness(1.1);
+      }
+      .scan-btn:active:not(:disabled) {
+        transform: translateY(1px);
+      }
+      .scan-btn:disabled {
+        background: var(--text-muted);
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
+
+      .scan-btn.scanning {
+        animation: pulse-button 1s ease-in-out infinite;
+      }
+
+      @keyframes pulse-button {
+        0%,
+        100% {
+          box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
         }
-
-        .card.blue::before { background: var(--accent-primary); }
-        .card.green::before { background: var(--success); }
-        .card.red::before { background: var(--danger); }
-        .card.purple::before { background: #d946ef; }
-
-        .metric-label { font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-        .metric-value { font-size: 2.5rem; font-weight: 700; margin: 10px 0; line-height: 1; }
-        .metric-sub { font-size: 0.85rem; color: var(--text-muted); }
-
-        .camera-container {
-            position: relative;
-            width: 100%;
-            height: 300px;
-            background: #000;
-            border-radius: 8px;
-            overflow: hidden;
-            border: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        50% {
+          box-shadow: 0 4px 25px rgba(99, 102, 241, 0.8);
         }
+      }
 
-        .camera-feed {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
+      .last-result {
+        flex: 1;
+        padding: 10px 15px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        border-left: 4px solid var(--text-muted);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .last-result.GOOD {
+        border-left-color: var(--success);
+        background: rgba(16, 185, 129, 0.1);
+      }
+      .last-result.BAD {
+        border-left-color: var(--danger);
+        background: rgba(239, 68, 68, 0.1);
+      }
+
+      .gauge-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+      }
+
+      .gauge-container {
+        width: 220px;
+        height: 220px;
+        position: relative;
+        background: var(--bg-card-hover);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 20px;
+        box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+      }
+
+      .gauge-arc {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: conic-gradient(var(--success) 0% 0%, transparent 0% 100%);
+        transition: background 0.5s ease-out;
+        mask: radial-gradient(transparent 65%, black 66%);
+        -webkit-mask: radial-gradient(transparent 65%, black 66%);
+      }
+
+      .gauge-value {
+        z-index: 2;
+        text-align: center;
+      }
+
+      .gauge-percent {
+        font-size: 3rem;
+        font-weight: 800;
+        line-height: 1;
+      }
+      .gauge-label {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        margin-top: 5px;
+      }
+
+      .table-container {
+        width: 100%;
+        overflow-x: auto;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--bg-card);
+        font-size: 0.95rem;
+      }
+
+      th {
+        text-align: left;
+        padding: 16px;
+        background: rgba(0, 0, 0, 0.2);
+        color: var(--text-muted);
+        font-weight: 600;
+        border-bottom: 1px solid var(--border);
+      }
+
+      td {
+        padding: 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      tr:last-child td {
+        border-bottom: none;
+      }
+      tr:hover td {
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      .text-success {
+        color: var(--success);
+      }
+      .text-danger {
+        color: var(--danger);
+      }
+      .font-mono {
+        font-family: "Courier New", monospace;
+      }
+
+      @keyframes pulse {
+        0% {
+          opacity: 1;
+          box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
         }
-
-        .camera-overlay {
-            position: absolute;
-            top: 10px; right: 10px;
-            background: rgba(0,0,0,0.7);
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            color: var(--success);
-            font-family: monospace;
+        70% {
+          opacity: 0.7;
+          box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
         }
-
-        .control-panel {
-            margin-top: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 20px;
+        100% {
+          opacity: 1;
+          box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
         }
-
-        .scan-btn {
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-hover));
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .scan-btn:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.1); }
-        .scan-btn:active:not(:disabled) { transform: translateY(1px); }
-        .scan-btn:disabled { background: var(--text-muted); cursor: not-allowed; opacity: 0.6; }
-
-        .last-result {
-            flex: 1;
-            padding: 10px 15px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 8px;
-            border-left: 4px solid var(--text-muted);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .last-result.GOOD { border-left-color: var(--success); background: rgba(16, 185, 129, 0.1); }
-        .last-result.BAD { border-left-color: var(--danger); background: rgba(239, 68, 68, 0.1); }
-
-        .gauge-wrapper {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-        }
-
-        .gauge-container {
-            width: 220px;
-            height: 220px;
-            position: relative;
-            background: var(--bg-card-hover);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 20px;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
-        }
-
-        .gauge-arc {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            border-radius: 50%;
-            background: conic-gradient(var(--success) 0% 0%, transparent 0% 100%);
-            transition: background 0.5s ease-out;
-            mask: radial-gradient(transparent 65%, black 66%);
-            -webkit-mask: radial-gradient(transparent 65%, black 66%);
-        }
-
-        .gauge-value {
-            z-index: 2;
-            text-align: center;
-        }
-
-        .gauge-percent { font-size: 3rem; font-weight: 800; line-height: 1; }
-        .gauge-label { font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; margin-top: 5px; }
-
-        .table-container {
-            width: 100%;
-            overflow-x: auto;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: var(--bg-card);
-            font-size: 0.95rem;
-        }
-
-        th {
-            text-align: left;
-            padding: 16px;
-            background: rgba(0,0,0,0.2);
-            color: var(--text-muted);
-            font-weight: 600;
-            border-bottom: 1px solid var(--border);
-        }
-
-        td {
-            padding: 16px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-
-        tr:last-child td { border-bottom: none; }
-        tr:hover td { background: rgba(255,255,255,0.02); }
-
-        .text-success { color: var(--success); }
-        .text-danger { color: var(--danger); }
-        .font-mono { font-family: 'Courier New', monospace; }
-
-        @keyframes pulse {
-            0% { opacity: 1; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
-            70% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
-            100% { opacity: 1; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-        }
+      }
     </style>
-</head>
-<body>
-<div class="container">
-    <header class="grid-header">
+  </head>
+  <body>
+    <div class="container">
+      <header class="grid-header">
         <div class="brand">
-            <div class="brand-dot"></div>
-            <h1>FiberTrace <span style="font-weight:300; color:var(--text-muted)">IoT</span></h1>
+          <div class="brand-dot"></div>
+          <h1>
+            FiberTrace
+            <span style="font-weight: 300; color: var(--text-muted)">IoT</span>
+          </h1>
         </div>
         <div class="status-badge" id="system-status">
-            <div class="status-dot"></div>
-            <span>OPERATIONAL</span>
+          <div class="status-dot"></div>
+          <span>OPERATIONAL</span>
         </div>
-    </header>
+      </header>
 
-    <section class="grid-metrics">
+      <section class="grid-metrics">
         <div class="card blue">
-            <div class="metric-label">Total Processed</div>
-            <div class="metric-value" id="val-total">0</div>
-            <div class="metric-sub">Items Scanned</div>
+          <div class="metric-label">Total Processed</div>
+          <div class="metric-value" id="val-total">0</div>
+          <div class="metric-sub">Items Scanned</div>
         </div>
         <div class="card purple">
-            <div class="metric-label">Bale Purity</div>
-            <div class="metric-value" id="val-purity">0%</div>
-            <div class="metric-sub">Target: >95%</div>
+          <div class="metric-label">Bale Purity</div>
+          <div class="metric-value" id="val-purity">0%</div>
+          <div class="metric-sub">Target: >95%</div>
         </div>
         <div class="card green">
-            <div class="metric-label">Pure Cotton</div>
-            <div class="metric-value" id="val-cotton">0</div>
-            <div class="metric-sub text-success">Verified</div>
+          <div class="metric-label">Pure Cotton</div>
+          <div class="metric-value" id="val-cotton">0</div>
+          <div class="metric-sub text-success">Verified</div>
         </div>
         <div class="card red">
-            <div class="metric-label">Blend Detected</div>
-            <div class="metric-value" id="val-blend">0</div>
-            <div class="metric-sub text-danger">Rejection Rate</div>
+          <div class="metric-label">Blend Detected</div>
+          <div class="metric-value" id="val-blend">0</div>
+          <div class="metric-sub text-danger">Rejection Rate</div>
         </div>
-    </section>
+      </section>
 
-    <section class="grid-main">
+      <section class="grid-main">
         <div class="card">
-            <h2>Live Inspection Feed</h2>
-            <div class="camera-container">
-                <img id="camera-preview" class="camera-feed" src="" alt="Waiting for scan..." style="display:none;">
-                <div id="camera-placeholder" style="color:var(--text-muted); text-align:center;">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-                        <circle cx="12" cy="13" r="4"></circle>
-                    </svg>
-                    <p style="margin-top:10px;">Ready to Scan</p>
-                </div>
-                <div class="camera-overlay">CAM_01 • 1080p</div>
+          <h2>Live Inspection Feed</h2>
+          <div class="camera-container">
+            <img
+              id="camera-preview"
+              class="camera-feed"
+              src=""
+              alt="Waiting for scan..."
+              style="display: none"
+            />
+            <div
+              id="camera-placeholder"
+              style="color: var(--text-muted); text-align: center"
+            >
+              <svg
+                width="48"
+                height="48"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
+                ></path>
+                <circle cx="12" cy="13" r="4"></circle>
+              </svg>
+              <p style="margin-top: 10px">Ready to Scan</p>
             </div>
-            <div class="control-panel">
-                <button class="scan-btn" onclick="triggerScan()" id="scan-button">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-                        <circle cx="12" cy="13" r="4"></circle>
-                    </svg>
-                    Scan Item
-                </button>
-                <div id="last-result-box" class="last-result">
-                    <div>
-                        <div style="font-size:0.8rem; color:var(--text-muted)">Last Item</div>
-                        <div id="last-composition" style="font-weight:600;">--</div>
-                    </div>
-                    <div id="last-badge" style="font-weight:800; font-size:1.1rem;">--</div>
+            <div class="scanning-line" id="scan-line"></div>
+            <div class="camera-overlay">CAM_01 • 1080p</div>
+          </div>
+          <div class="control-panel">
+            <button class="scan-btn" onclick="triggerScan()" id="scan-button">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
+                ></path>
+                <circle cx="12" cy="13" r="4"></circle>
+              </svg>
+              Scan Item
+            </button>
+            <div id="last-result-box" class="last-result">
+              <div>
+                <div style="font-size: 0.8rem; color: var(--text-muted)">
+                  Last Item
                 </div>
+                <div id="last-composition" style="font-weight: 600">--</div>
+              </div>
+              <div id="last-badge" style="font-weight: 800; font-size: 1.1rem">
+                --
+              </div>
             </div>
+          </div>
         </div>
 
         <div class="card">
-            <h2>Overall Bale Quality</h2>
-            <div class="gauge-wrapper">
-                <div class="gauge-container">
-                    <div class="gauge-arc" id="purity-arc"></div>
-                    <div class="gauge-value">
-                        <div class="gauge-percent" id="gauge-text">0%</div>
-                        <div class="gauge-label">Pure Cotton</div>
-                    </div>
-                </div>
-                <div style="text-align: center;">
-                    <span id="quality-status" class="status-badge" style="background:transparent; border:none;">
-                        Waiting for data...
-                    </span>
-                </div>
+          <h2>Overall Bale Quality</h2>
+          <div class="gauge-wrapper">
+            <div class="gauge-container">
+              <div class="gauge-arc" id="purity-arc"></div>
+              <div class="gauge-value">
+                <div class="gauge-percent" id="gauge-text">0%</div>
+                <div class="gauge-label">Pure Cotton</div>
+              </div>
             </div>
+            <div style="text-align: center">
+              <span
+                id="quality-status"
+                class="status-badge"
+                style="background: transparent; border: none"
+              >
+                Waiting for data...
+              </span>
+            </div>
+          </div>
         </div>
-    </section>
+      </section>
 
-    <div class="card" style="padding:0; overflow:hidden;">
-        <div style="padding: 20px; border-bottom: 1px solid var(--border);">
-            <h2 style="margin:0;">Production Batch Statistics</h2>
+      <div class="card" style="padding: 0; overflow: hidden">
+        <div style="padding: 20px; border-bottom: 1px solid var(--border)">
+          <h2 style="margin: 0">Production Batch Statistics</h2>
         </div>
         <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Metric</th>
-                        <th>Current Value</th>
-                        <th>Status</th>
-                        <th>Last Update</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Total Throughput</td>
-                        <td id="tbl-total" class="font-mono">0</td>
-                        <td><span class="text-success">Active</span></td>
-                        <td id="tbl-update-1" class="font-mono">--</td>
-                    </tr>
-                    <tr>
-                        <td>Pure Cotton Count</td>
-                        <td id="tbl-cotton" class="font-mono">0</td>
-                        <td><span class="text-success">Normal</span></td>
-                        <td id="tbl-update-2" class="font-mono">--</td>
-                    </tr>
-                    <tr>
-                        <td>Contaminants (Blend)</td>
-                        <td id="tbl-blend" class="font-mono">0</td>
-                        <td><span class="text-danger">High Alert</span></td>
-                        <td id="tbl-update-3" class="font-mono">--</td>
-                    </tr>
-                    <tr>
-                        <td>Current Bale Purity</td>
-                        <td id="tbl-purity" class="font-mono">0%</td>
-                        <td id="tbl-purity-status">--</td>
-                        <td id="tbl-update-4" class="font-mono">--</td>
-                    </tr>
-                    <tr>
-                        <td>Last Item Purity</td>
-                        <td id="tbl-item-purity" class="font-mono">--</td>
-                        <td id="tbl-item-status">--</td>
-                        <td id="tbl-update-5" class="font-mono">--</td>
-                    </tr>
-                </tbody>
-            </table>
+          <table>
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th>Current Value</th>
+                <th>Status</th>
+                <th>Last Update</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Total Throughput</td>
+                <td id="tbl-total" class="font-mono">0</td>
+                <td><span class="text-success">Active</span></td>
+                <td id="tbl-update-1" class="font-mono">--</td>
+              </tr>
+              <tr>
+                <td>Pure Cotton Count</td>
+                <td id="tbl-cotton" class="font-mono">0</td>
+                <td><span class="text-success">Normal</span></td>
+                <td id="tbl-update-2" class="font-mono">--</td>
+              </tr>
+              <tr>
+                <td>Contaminants (Blend)</td>
+                <td id="tbl-blend" class="font-mono">0</td>
+                <td><span class="text-danger">High Alert</span></td>
+                <td id="tbl-update-3" class="font-mono">--</td>
+              </tr>
+              <tr>
+                <td>Current Bale Purity</td>
+                <td id="tbl-purity" class="font-mono">0%</td>
+                <td id="tbl-purity-status">--</td>
+                <td id="tbl-update-4" class="font-mono">--</td>
+              </tr>
+              <tr>
+                <td>Last Item Purity</td>
+                <td id="tbl-item-purity" class="font-mono">--</td>
+                <td id="tbl-item-status">--</td>
+                <td id="tbl-update-5" class="font-mono">--</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
+      </div>
     </div>
-</div>
 
-<script>
-    async function fetchStats() {
-        try {
-            const response = await fetch('/api/stats');
-            if (!response.ok) throw new Error('API Error');
-            const data = await response.json();
-            updateDashboard(data);
-            updateConnectionStatus(true);
-        } catch (error) {
-            console.error('Error fetching stats:', error);
-            updateConnectionStatus(false);
+    <script>
+      // Animate number values smoothly
+      function animateValue(id, end, duration = 1000) {
+        const obj = document.getElementById(id);
+        if (!obj) return;
+        const start = parseInt(obj.innerText.replace(/,/g, "").replace("%", "")) || 0;
+        if (start === end) return;
+
+        let startTimestamp = null;
+        const step = (timestamp) => {
+          if (!startTimestamp) startTimestamp = timestamp;
+          const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+          // Easing function for smooth animation
+          const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+          const current = Math.floor(start + (end - start) * easeOutQuart);
+          obj.innerText = current.toLocaleString();
+          if (progress < 1) {
+            window.requestAnimationFrame(step);
+          } else {
+            obj.innerText = end.toLocaleString();
+          }
+        };
+        window.requestAnimationFrame(step);
+      }
+
+      // Animate percentage values
+      function animatePercentage(id, end, duration = 1000) {
+        const obj = document.getElementById(id);
+        if (!obj) return;
+        const start = parseFloat(obj.innerText.replace("%", "")) || 0;
+        if (Math.abs(start - end) < 0.1) {
+          obj.innerText = end.toFixed(1) + "%";
+          return;
         }
-    }
 
-    async function triggerScan() {
-        const btn = document.getElementById('scan-button');
+        let startTimestamp = null;
+        const step = (timestamp) => {
+          if (!startTimestamp) startTimestamp = timestamp;
+          const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+          const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+          const current = start + (end - start) * easeOutQuart;
+          obj.innerText = current.toFixed(1) + "%";
+          if (progress < 1) {
+            window.requestAnimationFrame(step);
+          } else {
+            obj.innerText = end.toFixed(1) + "%";
+          }
+        };
+        window.requestAnimationFrame(step);
+      }
+
+      async function fetchStats() {
+        try {
+          const response = await fetch("/api/stats");
+          if (!response.ok) throw new Error("API Error");
+          const data = await response.json();
+          updateDashboard(data);
+          updateConnectionStatus(true);
+        } catch (error) {
+          console.error("Error fetching stats:", error);
+          updateConnectionStatus(false);
+        }
+      }
+
+      async function triggerScan() {
+        const btn = document.getElementById("scan-button");
+        const scanLine = document.getElementById("scan-line");
         btn.disabled = true;
-        btn.innerHTML = 'Scanning...';
+        btn.classList.add("scanning");
+        btn.innerHTML = "Scanning...";
+        scanLine.style.display = "block";
 
         try {
-            const response = await fetch('/api/scan', { method: 'POST' });
-            if (!response.ok) throw new Error('Scan Failed');
-            const data = await response.json();
+          const response = await fetch("/api/scan", { method: "POST" });
+          if (!response.ok) throw new Error("Scan Failed");
+          const data = await response.json();
 
-            if (data.success) {
-                // Update image
-                const img = document.getElementById('camera-preview');
-                img.src = '/api/camera/preview?t=' + new Date().getTime();
-                img.style.display = 'block';
-                document.getElementById('camera-placeholder').style.display = 'none';
+          if (data.success) {
+            // Update image
+            const img = document.getElementById("camera-preview");
+            img.src = "/api/camera/preview?t=" + new Date().getTime();
+            img.style.display = "block";
+            document.getElementById("camera-placeholder").style.display =
+              "none";
 
-                // Wait a moment for data to be saved, then refresh
-                setTimeout(() => {
-                    fetchStats();
-                }, 300);
-            } else {
-                alert("Scan failed: " + (data.error || "Unknown error"));
-            }
+            // Wait a moment for data to be saved, then refresh
+            setTimeout(() => {
+              fetchStats();
+            }, 300);
+          } else {
+            alert("Scan failed: " + (data.error || "Unknown error"));
+          }
         } catch (error) {
-            alert("Scan failed: " + error.message);
+          alert("Scan failed: " + error.message);
         } finally {
-            btn.disabled = false;
-            btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg> Scan Item`;
+          btn.disabled = false;
+          btn.classList.remove("scanning");
+          scanLine.style.display = "none";
+          btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg> Scan Item`;
         }
-    }
+      }
 
-    function updateDashboard(data) {
-        // Update Metric Cards
-        document.getElementById('val-total').innerText = data.total_scanned.toLocaleString();
-        document.getElementById('val-cotton').innerText = data.good_count.toLocaleString();
-        document.getElementById('val-blend').innerText = data.bad_count.toLocaleString();
-        document.getElementById('val-purity').innerText = data.purity + '%';
+      function updateDashboard(data) {
+        // Update Metric Cards with animation
+        animateValue("val-total", data.total_scanned);
+        animateValue("val-cotton", data.good_count);
+        animateValue("val-blend", data.bad_count);
+        animatePercentage("val-purity", data.purity);
 
         // Update Gauge
         updateGauge(data.purity);
 
         // Update Table
-        document.getElementById('tbl-total').innerText = data.total_scanned.toLocaleString();
-        document.getElementById('tbl-cotton').innerText = data.good_count.toLocaleString();
-        document.getElementById('tbl-blend').innerText = data.bad_count.toLocaleString();
-        document.getElementById('tbl-purity').innerText = data.purity + '%';
+        document.getElementById("tbl-total").innerText =
+          data.total_scanned.toLocaleString();
+        document.getElementById("tbl-cotton").innerText =
+          data.good_count.toLocaleString();
+        document.getElementById("tbl-blend").innerText =
+          data.bad_count.toLocaleString();
+        document.getElementById("tbl-purity").innerText = data.purity + "%";
 
         // Update timestamps
-        const updateTime = data.last_update || 'Never';
-        document.getElementById('tbl-update-1').innerText = updateTime;
-        document.getElementById('tbl-update-2').innerText = updateTime;
-        document.getElementById('tbl-update-3').innerText = updateTime;
-        document.getElementById('tbl-update-4').innerText = updateTime;
-        document.getElementById('tbl-update-5').innerText = updateTime;
+        const updateTime = data.last_update || "Never";
+        document.getElementById("tbl-update-1").innerText = updateTime;
+        document.getElementById("tbl-update-2").innerText = updateTime;
+        document.getElementById("tbl-update-3").innerText = updateTime;
+        document.getElementById("tbl-update-4").innerText = updateTime;
+        document.getElementById("tbl-update-5").innerText = updateTime;
 
         // Update Last Result Display
-        const resBox = document.getElementById('last-result-box');
-        const badge = document.getElementById('last-badge');
-        const comp = document.getElementById('last-composition');
+        const resBox = document.getElementById("last-result-box");
+        const badge = document.getElementById("last-badge");
+        const comp = document.getElementById("last-composition");
 
-        if (data.last_result && data.last_result !== 'N/A') {
-            badge.innerText = data.last_result;
-            comp.innerText = data.last_composition || '--';
-            resBox.className = 'last-result ' + data.last_result;
+        if (data.last_result && data.last_result !== "N/A") {
+          badge.innerText = data.last_result;
+          comp.innerText = data.last_composition || "--";
+          resBox.className = "last-result " + data.last_result;
         } else {
-            badge.innerText = '--';
-            comp.innerText = '--';
-            resBox.className = 'last-result';
+          badge.innerText = "--";
+          comp.innerText = "--";
+          resBox.className = "last-result";
         }
 
         // Update item purity in table
-        if (data.last_item_purity !== null && data.last_item_purity !== undefined && data.last_item_purity !== 'N/A') {
-            document.getElementById('tbl-item-purity').innerText = data.last_item_purity + '%';
-            const itemStatus = document.getElementById('tbl-item-status');
-            if (data.last_result === 'GOOD') {
-                itemStatus.innerHTML = '<span class="text-success">Pure</span>';
-            } else {
-                itemStatus.innerHTML = '<span class="text-danger">Blend</span>';
-            }
+        if (
+          data.last_item_purity !== null &&
+          data.last_item_purity !== undefined &&
+          data.last_item_purity !== "N/A"
+        ) {
+          document.getElementById("tbl-item-purity").innerText =
+            data.last_item_purity + "%";
+          const itemStatus = document.getElementById("tbl-item-status");
+          if (data.last_result === "GOOD") {
+            itemStatus.innerHTML = '<span class="text-success">Pure</span>';
+          } else {
+            itemStatus.innerHTML = '<span class="text-danger">Blend</span>';
+          }
         } else {
-            document.getElementById('tbl-item-purity').innerText = '--';
-            document.getElementById('tbl-item-status').innerText = '--';
+          document.getElementById("tbl-item-purity").innerText = "--";
+          document.getElementById("tbl-item-status").innerText = "--";
         }
 
         // Update purity status
-        const purityStatus = document.getElementById('tbl-purity-status');
+        const purityStatus = document.getElementById("tbl-purity-status");
         if (data.purity >= 98) {
-            purityStatus.innerHTML = '<span class="text-success">Certified (98%+)</span>';
+          purityStatus.innerHTML =
+            '<span class="text-success">Certified (98%+)</span>';
         } else if (data.purity >= 90) {
-            purityStatus.innerHTML = '<span class="text-warning">Good</span>';
+          purityStatus.innerHTML = '<span class="text-warning">Good</span>';
         } else {
-            purityStatus.innerHTML = '<span class="text-danger">Needs Improvement</span>';
+          purityStatus.innerHTML =
+            '<span class="text-danger">Needs Improvement</span>';
         }
-    }
+      }
 
-    function updateGauge(percentage) {
-        const arc = document.getElementById('purity-arc');
-        const text = document.getElementById('gauge-text');
-        const status = document.getElementById('quality-status');
+      function updateGauge(percentage) {
+        const arc = document.getElementById("purity-arc");
+        const text = document.getElementById("gauge-text");
+        const status = document.getElementById("quality-status");
         const numeric = parseFloat(percentage) || 0;
 
         // Update Text
-        text.innerText = numeric.toFixed(1) + '%';
+        text.innerText = numeric.toFixed(1) + "%";
 
         // Determine Color
-        let color = '#ef4444'; // Red
+        let color = "#ef4444"; // Red
         let statusText = "Action Required";
-        if (numeric >= 90) { color = '#f59e0b'; statusText = "Acceptable"; }
-        if (numeric >= 98) { color = '#10b981'; statusText = "Certified Grade A"; }
+        if (numeric >= 90) {
+          color = "#f59e0b";
+          statusText = "Acceptable";
+        }
+        if (numeric >= 98) {
+          color = "#10b981";
+          statusText = "Certified Grade A";
+        }
 
         // Update Gradient
         arc.style.background = `conic-gradient(${color} 0% ${numeric}%, transparent ${numeric}% 100%)`;
@@ -542,32 +809,32 @@
         status.innerHTML = `<div class="status-dot" style="background:${color}"></div> ${statusText}`;
         status.style.color = color;
         status.style.borderColor = color;
-        status.style.background = color + '1a';
-    }
+        status.style.background = color + "1a";
+      }
 
-    function updateConnectionStatus(isOnline) {
-        const badge = document.getElementById('system-status');
-        const dot = badge.querySelector('.status-dot');
-        const text = badge.querySelector('span');
-        if(isOnline) {
-            text.innerText = "OPERATIONAL";
-            badge.style.color = "var(--success)";
-            badge.style.borderColor = "rgba(16, 185, 129, 0.2)";
-            dot.style.backgroundColor = "var(--success)";
+      function updateConnectionStatus(isOnline) {
+        const badge = document.getElementById("system-status");
+        const dot = badge.querySelector(".status-dot");
+        const text = badge.querySelector("span");
+        if (isOnline) {
+          text.innerText = "OPERATIONAL";
+          badge.style.color = "var(--success)";
+          badge.style.borderColor = "rgba(16, 185, 129, 0.2)";
+          dot.style.backgroundColor = "var(--success)";
         } else {
-            text.innerText = "OFFLINE";
-            badge.style.color = "var(--danger)";
-            badge.style.borderColor = "rgba(239, 68, 68, 0.2)";
-            dot.style.backgroundColor = "var(--danger)";
+          text.innerText = "OFFLINE";
+          badge.style.color = "var(--danger)";
+          badge.style.borderColor = "rgba(239, 68, 68, 0.2)";
+          dot.style.backgroundColor = "var(--danger)";
         }
-    }
+      }
 
-    // Initial Load & Polling
-    window.addEventListener('DOMContentLoaded', () => {
+      // Initial Load & Polling
+      window.addEventListener("DOMContentLoaded", () => {
         fetchStats();
         // Poll every 2 seconds
         setInterval(fetchStats, 2000);
-    });
-</script>
-</body>
+      });
+    </script>
+  </body>
 </html>
