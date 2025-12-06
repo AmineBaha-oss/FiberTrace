@@ -110,13 +110,69 @@ def move_gate(angle, servo_pwm):
 def init_camera(camera_index=0):
     """
     Initialize the camera using OpenCV.
-    For libcamera-based systems, you may need:
-      cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
+    Tries multiple methods for compatibility with different Pi OS versions.
     """
-    cap = cv2.VideoCapture(camera_index)
-    if not cap.isOpened():
+    cap = None
+    
+    # Method 1: Try libcamera with v4l2 backend (newer Pi OS)
+    try:
+        cap = cv2.VideoCapture(camera_index, cv2.CAP_V4L2)
+        if cap.isOpened():
+            cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+            ret, frame = cap.read()
+            if ret and frame is not None:
+                return cap
+            else:
+                cap.release()
+                cap = None
+    except:
+        if cap:
+            cap.release()
+        cap = None
+    
+    # Method 2: Try standard initialization
+    if cap is None:
+        try:
+            cap = cv2.VideoCapture(camera_index)
+            if cap.isOpened():
+                cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+                cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+                ret, frame = cap.read()
+                if ret and frame is not None:
+                    return cap
+                else:
+                    cap.release()
+                    cap = None
+        except:
+            if cap:
+                cap.release()
+            cap = None
+    
+    # Method 3: Try camera index 1
+    if cap is None and camera_index == 0:
+        try:
+            cap = cv2.VideoCapture(1)
+            if cap.isOpened():
+                ret, frame = cap.read()
+                if ret and frame is not None:
+                    return cap
+                else:
+                    cap.release()
+                    cap = None
+        except:
+            if cap:
+                cap.release()
+            cap = None
+    
+    if cap is None or not cap.isOpened():
         print("ERROR: Could not open camera. Check connection and index.")
+        print("Troubleshooting:")
+        print("  1. Enable camera: sudo raspi-config → Interface Options → Camera")
+        print("  2. Reboot: sudo reboot")
+        print("  3. Check camera: vcgencmd get_camera")
         sys.exit(1)
+    
     return cap
 
 def classify_item(frame):

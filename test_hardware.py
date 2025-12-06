@@ -32,22 +32,87 @@ def test_camera():
     print("TEST 1: Camera")
     print("="*50)
     
+    cap = None
+    
+    # Try different camera initialization methods
+    print("Initializing camera...")
+    print("Trying different methods...")
+    
+    # Method 1: Try libcamera (for newer Raspberry Pi OS)
+    print("  → Trying libcamera backend...")
     try:
-        print("Initializing camera...")
-        cap = cv2.VideoCapture(0)
-        
-        if not cap.isOpened():
-            print("❌ ERROR: Could not open camera!")
-            print("   - Check camera connection")
-            print("   - Make sure camera is enabled: sudo raspi-config")
-            return False
-        
-        print("✓ Camera opened successfully")
-        print("Taking test photo in 2 seconds...")
-        time.sleep(2)
-        
+        cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
+        if cap.isOpened():
+            # Set resolution for better compatibility
+            cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+            ret, frame = cap.read()
+            if ret and frame is not None:
+                print("  ✓ libcamera backend works!")
+            else:
+                cap.release()
+                cap = None
+    except:
+        if cap:
+            cap.release()
+        cap = None
+    
+    # Method 2: Try standard v4l2
+    if cap is None or not cap.isOpened():
+        print("  → Trying standard v4l2...")
+        try:
+            cap = cv2.VideoCapture(0)
+            if cap.isOpened():
+                cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+                cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+                ret, frame = cap.read()
+                if ret and frame is not None:
+                    print("  ✓ Standard v4l2 works!")
+                else:
+                    cap.release()
+                    cap = None
+        except:
+            if cap:
+                cap.release()
+            cap = None
+    
+    # Method 3: Try camera index 1
+    if cap is None or not cap.isOpened():
+        print("  → Trying camera index 1...")
+        try:
+            cap = cv2.VideoCapture(1)
+            if cap.isOpened():
+                ret, frame = cap.read()
+                if ret and frame is not None:
+                    print("  ✓ Camera index 1 works!")
+                else:
+                    cap.release()
+                    cap = None
+        except:
+            if cap:
+                cap.release()
+            cap = None
+    
+    if cap is None or not cap.isOpened():
+        print("\n❌ ERROR: Could not open camera with any method!")
+        print("\nTroubleshooting steps:")
+        print("  1. Check camera connection (ribbon cable)")
+        print("  2. Enable camera: sudo raspi-config")
+        print("     → Interface Options → Camera → Enable")
+        print("  3. Reboot after enabling: sudo reboot")
+        print("  4. Check if camera is detected:")
+        print("     vcgencmd get_camera")
+        print("  5. Try using libcamera directly:")
+        print("     libcamera-hello -t 0")
+        return False
+    
+    print("✓ Camera opened successfully")
+    print("Taking test photo in 2 seconds...")
+    time.sleep(2)
+    
+    try:
         ret, frame = cap.read()
-        if not ret:
+        if not ret or frame is None:
             print("❌ ERROR: Could not read frame from camera")
             cap.release()
             return False
@@ -59,11 +124,14 @@ def test_camera():
         cv2.imwrite('test_camera.jpg', frame)
         print("✓ Test image saved as 'test_camera.jpg'")
         
-        # Show image for 3 seconds
-        print("Displaying image for 3 seconds...")
-        cv2.imshow('Camera Test - Press any key to continue', frame)
-        cv2.waitKey(3000)
-        cv2.destroyAllWindows()
+        # Show image for 3 seconds (if display available)
+        try:
+            print("Displaying image for 3 seconds...")
+            cv2.imshow('Camera Test - Press any key to continue', frame)
+            cv2.waitKey(3000)
+            cv2.destroyAllWindows()
+        except:
+            print("  (Display not available, but image was saved)")
         
         cap.release()
         print("✓ Camera test PASSED\n")
@@ -71,6 +139,8 @@ def test_camera():
         
     except Exception as e:
         print(f"❌ ERROR: {e}")
+        if cap:
+            cap.release()
         return False
 
 def test_leds():
