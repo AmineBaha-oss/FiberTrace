@@ -32,11 +32,40 @@ def test_camera():
     print("TEST 1: Camera")
     print("="*50)
     
+    # First, check camera status
+    print("Checking camera status...")
+    import subprocess
+    try:
+        result = subprocess.run(['vcgencmd', 'get_camera'], 
+                              capture_output=True, text=True, timeout=2)
+        if result.returncode == 0:
+            print(f"  Camera status: {result.stdout.strip()}")
+            if 'detected=0' in result.stdout:
+                print("  ⚠️  Camera not detected! Check connection.")
+            elif 'supported=0' in result.stdout:
+                print("  ⚠️  Camera not supported! Enable in raspi-config.")
+        else:
+            print("  ⚠️  Could not check camera status")
+    except:
+        print("  ⚠️  Could not run vcgencmd (may not be on Pi)")
+    
+    # Check for video devices
+    try:
+        result = subprocess.run(['ls', '/dev/video*'], 
+                              shell=True, capture_output=True, text=True, timeout=2)
+        if result.returncode == 0 and result.stdout.strip():
+            devices = result.stdout.strip().split('\n')
+            print(f"  Video devices found: {devices}")
+        else:
+            print("  ⚠️  No /dev/video* devices found")
+    except:
+        pass
+    
     cap = None
     frame = None
     
     # Try different camera initialization methods
-    print("Initializing camera...")
+    print("\nInitializing camera...")
     print("Trying different methods...")
     
     # Method 1: Try picamera2 (recommended for newer Pi OS with libcamera)
@@ -44,17 +73,42 @@ def test_camera():
     try:
         from picamera2 import Picamera2
         picam2 = Picamera2()
-        picam2.configure(picam2.create_preview_configuration(main={"size": (640, 480)}))
-        picam2.start()
-        time.sleep(2)  # Let camera warm up
-        frame_array = picam2.capture_array()
-        picam2.stop()
-        # Convert RGB to BGR for OpenCV
-        frame = cv2.cvtColor(frame_array, cv2.COLOR_RGB2BGR)
-        print("  ✓ picamera2 works!")
-        cap = "picamera2"  # Mark as successful
+        
+        # List available cameras first
+        try:
+            camera_info = picam2.camera_properties
+            print(f"    Camera info: {camera_info}")
+        except:
+            pass
+        
+        # Try simpler configuration
+        try:
+            config = picam2.create_preview_configuration()
+            picam2.configure(config)
+            picam2.start()
+            time.sleep(2)  # Let camera warm up
+            frame_array = picam2.capture_array()
+            picam2.stop()
+            # Convert RGB to BGR for OpenCV
+            frame = cv2.cvtColor(frame_array, cv2.COLOR_RGB2BGR)
+            print("  ✓ picamera2 works!")
+            cap = "picamera2"  # Mark as successful
+        except Exception as e:
+            print(f"    Configuration failed: {e}")
+            # Try even simpler - just capture without specific config
+            try:
+                picam2.start()
+                time.sleep(2)
+                frame_array = picam2.capture_array()
+                picam2.stop()
+                frame = cv2.cvtColor(frame_array, cv2.COLOR_RGB2BGR)
+                print("  ✓ picamera2 works (simple config)!")
+                cap = "picamera2"
+            except Exception as e2:
+                print(f"    Simple config also failed: {e2}")
     except ImportError:
-        print("  ⚠️  picamera2 not installed (optional)")
+        print("  ⚠️  picamera2 not installed")
+        print("     Install: sudo apt install -y python3-picamera2")
     except Exception as e:
         print(f"  ⚠️  picamera2 failed: {e}")
     
@@ -116,19 +170,50 @@ def test_camera():
     
     if cap is None or frame is None:
         print("\n❌ ERROR: Could not open camera with any method!")
+        print("\nDiagnostics:")
+        
+        # Check camera detection
+        try:
+            result = subprocess.run(['vcgencmd', 'get_camera'], 
+                                  capture_output=True, text=True, timeout=2)
+            if result.returncode == 0:
+                print(f"  vcgencmd get_camera: {result.stdout.strip()}")
+        except:
+            pass
+        
+        # Try libcamera-hello
+        print("\n  Testing with libcamera-hello...")
+        try:
+            result = subprocess.run(['libcamera-hello', '--help'], 
+                                  capture_output=True, text=True, timeout=2)
+            if result.returncode == 0:
+                print("  ✓ libcamera-hello is available")
+                print("    Try: libcamera-hello -t 0")
+            else:
+                print("  ⚠️  libcamera-hello not working")
+        except FileNotFoundError:
+            print("  ⚠️  libcamera-hello not found")
+        except:
+            pass
+        
         print("\nTroubleshooting steps:")
-        print("  1. Install python3-libcamera (system package):")
-        print("     sudo apt install -y python3-libcamera python3-picamera2")
-        print("  2. Check camera connection (ribbon cable)")
-        print("  3. Enable camera: sudo raspi-config")
+        print("  1. Check camera is enabled:")
+        print("     sudo raspi-config")
         print("     → Interface Options → Camera → Enable")
-        print("  4. Reboot after enabling: sudo reboot")
-        print("  5. Check if camera is detected:")
+        print("     sudo reboot")
+        print("  2. Check camera detection:")
         print("     vcgencmd get_camera")
-        print("  6. Try using libcamera directly:")
+        print("     (Should show: supported=1 detected=1)")
+        print("  3. Test camera directly:")
         print("     libcamera-hello -t 0")
-        print("\n  Note: If using virtual environment, camera may need")
-        print("        system Python (outside venv) for libcamera support.")
+        print("  4. Install camera packages:")
+        print("     sudo apt install -y python3-libcamera python3-picamera2")
+        print("  5. Check camera connection:")
+        print("     - Power off Pi")
+        print("     - Check ribbon cable is properly seated")
+        print("     - Metal contacts face away from HDMI ports")
+        print("  6. If using virtual environment:")
+        print("     Camera may need system Python (outside venv)")
         return False
     
     print("✓ Camera opened successfully")
