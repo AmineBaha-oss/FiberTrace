@@ -28,7 +28,7 @@ Once your code is pushed to GitHub, on your Raspberry Pi run:
 
 ```bash
 cd ~
-git clone https://github.com/YOUR_USERNAME/FiberTrace.git
+git clone https://github.com/AmineBaha-oss/FiberTrace.git
 cd FiberTrace
 ```
 
