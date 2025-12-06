@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FiberTrace Dashboard</title>
+    <title>FiberTrace - Industrial Sorting Dashboard</title>
     <style>
       * {
         margin: 0;
@@ -12,202 +12,493 @@
       }
 
       body {
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        font-family: "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+        background: #0a0e27;
+        color: #e0e6ed;
         min-height: 100vh;
-        padding: 20px;
-        color: #333;
+        padding: 0;
+        overflow-x: hidden;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #1a1f3a 0%, #0f1419 100%);
+        border-bottom: 2px solid #2d3748;
+        padding: 20px 40px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      }
+
+      .header-left {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+
+      .logo {
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        font-weight: bold;
+      }
+
+      .header-title h1 {
+        font-size: 1.8em;
+        color: #ffffff;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+
+      .header-title p {
+        font-size: 0.9em;
+        color: #94a3b8;
+      }
+
+      .status-badge {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        background: #1e293b;
+        border-radius: 8px;
+        border: 1px solid #334155;
+      }
+
+      .status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #10b981;
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
       }
 
       .container {
-        max-width: 1200px;
+        max-width: 1600px;
         margin: 0 auto;
+        padding: 30px;
       }
 
-      header {
-        text-align: center;
-        color: white;
-        margin-bottom: 30px;
-      }
-
-      header h1 {
-        font-size: 2.5em;
-        margin-bottom: 10px;
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-      }
-
-      header p {
-        font-size: 1.1em;
-        opacity: 0.9;
-      }
-
-      .dashboard {
-        background: white;
-        border-radius: 20px;
-        padding: 40px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-      }
-
-      .stats-grid {
+      .metrics-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
         gap: 20px;
         margin-bottom: 30px;
       }
 
-      .stat-card {
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-        padding: 25px;
-        border-radius: 15px;
-        text-align: center;
-        transition: transform 0.3s ease;
+      .metric-card {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border: 1px solid #334155;
+        border-radius: 16px;
+        padding: 24px;
+        transition: all 0.3s ease;
       }
 
-      .stat-card:hover {
-        transform: translateY(-5px);
+      .metric-card:hover {
+        border-color: #4f46e5;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(79, 70, 229, 0.2);
       }
 
-      .stat-card.good {
-        background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
-      }
-
-      .stat-card.bad {
-        background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-      }
-
-      .stat-card.purity {
-        background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-      }
-
-      .stat-label {
-        font-size: 0.9em;
-        color: #666;
-        margin-bottom: 10px;
+      .metric-label {
+        font-size: 0.85em;
+        color: #94a3b8;
         text-transform: uppercase;
         letter-spacing: 1px;
+        margin-bottom: 12px;
+        font-weight: 600;
       }
 
-      .stat-value {
-        font-size: 3em;
-        font-weight: bold;
-        color: #333;
+      .metric-value {
+        font-size: 2.8em;
+        font-weight: 700;
+        color: #ffffff;
+        margin-bottom: 8px;
       }
 
-      .purity-circle {
-        width: 200px;
-        height: 200px;
-        margin: 30px auto;
+      .metric-change {
+        font-size: 0.9em;
+        color: #10b981;
+      }
+
+      .metric-card.throughput .metric-value { color: #60a5fa; }
+      .metric-card.purity .metric-value { color: #34d399; }
+      .metric-card.cotton .metric-value { color: #4ade80; }
+      .metric-card.blend .metric-value { color: #f87171; }
+      .metric-card.polyester .metric-value { color: #818cf8; }
+
+      .main-content {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 30px;
+        margin-bottom: 30px;
+      }
+
+      .panel {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border: 1px solid #334155;
+        border-radius: 16px;
+        padding: 30px;
+      }
+
+      .panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #334155;
+      }
+
+      .panel-title {
+        font-size: 1.3em;
+        font-weight: 700;
+        color: #ffffff;
+      }
+
+      .camera-preview-container {
+        position: relative;
+        width: 100%;
+        background: #0a0e27;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 2px solid #334155;
+      }
+
+      .camera-preview {
+        width: 100%;
+        display: block;
+        max-height: 500px;
+        object-fit: contain;
+      }
+
+      .scan-controls {
+        margin-top: 20px;
+        display: flex;
+        gap: 15px;
+        align-items: center;
+      }
+
+      .scan-button {
+        flex: 1;
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        color: white;
+        border: none;
+        padding: 16px 32px;
+        font-size: 1.1em;
+        font-weight: 600;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+      }
+
+      .scan-button:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(79, 70, 229, 0.6);
+      }
+
+      .scan-button:active:not(:disabled) {
+        transform: translateY(0);
+      }
+
+      .scan-button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      .result-badge {
+        padding: 12px 24px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 1.1em;
+        text-align: center;
+      }
+
+      .result-badge.good {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+      }
+
+      .result-badge.bad {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+      }
+
+      .result-badge.pure-poly {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+      }
+
+      .purity-gauge {
+        text-align: center;
+        margin: 30px 0;
+      }
+
+      .gauge-circle {
+        width: 220px;
+        height: 220px;
+        margin: 0 auto;
         position: relative;
         border-radius: 50%;
         background: conic-gradient(
-          #4ade80 0deg,
-          #4ade80 calc(var(--purity) * 3.6deg),
-          #e5e7eb calc(var(--purity) * 3.6deg),
-          #e5e7eb 360deg
+          #10b981 0deg,
+          #10b981 calc(var(--purity) * 3.6deg),
+          #334155 calc(var(--purity) * 3.6deg),
+          #334155 360deg
         );
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 10px 40px rgba(16, 185, 129, 0.3);
       }
 
-      .purity-inner {
-        width: 150px;
-        height: 150px;
-        background: white;
+      .gauge-inner {
+        width: 170px;
+        height: 170px;
+        background: #1e293b;
         border-radius: 50%;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
+        border: 3px solid #334155;
       }
 
-      .purity-percent {
-        font-size: 2.5em;
-        font-weight: bold;
-        color: #333;
+      .gauge-value {
+        font-size: 3em;
+        font-weight: 700;
+        color: #10b981;
       }
 
-      .purity-label {
+      .gauge-label {
         font-size: 0.9em;
-        color: #666;
+        color: #94a3b8;
         text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-top: 5px;
+      }
+
+      .certificate-section {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border: 1px solid #334155;
+        border-radius: 16px;
+        padding: 30px;
+        margin-top: 30px;
+      }
+
+      .certificate-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #334155;
+      }
+
+      .cert-badge {
+        display: inline-block;
+        padding: 8px 16px;
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        border-radius: 8px;
+        font-size: 0.85em;
+        font-weight: 600;
+        color: white;
+      }
+
+      .stats-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .stats-table th,
+      .stats-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #334155;
+      }
+
+      .stats-table th {
+        color: #94a3b8;
+        font-weight: 600;
+        font-size: 0.9em;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .stats-table td {
+        color: #e0e6ed;
+        font-weight: 500;
+      }
+
+      .stats-table tr:hover {
+        background: #1e293b;
       }
 
       .last-update {
         text-align: center;
-        color: #666;
+        color: #64748b;
         margin-top: 20px;
         font-size: 0.9em;
       }
 
-      .status-indicator {
-        display: inline-block;
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        background: #4ade80;
-        margin-right: 8px;
-        animation: pulse 2s infinite;
-      }
-
-      @keyframes pulse {
-        0%,
-        100% {
-          opacity: 1;
-        }
-        50% {
-          opacity: 0.5;
+      @media (max-width: 1200px) {
+        .main-content {
+          grid-template-columns: 1fr;
         }
       }
 
       @media (max-width: 768px) {
-        .stats-grid {
+        .header {
+          flex-direction: column;
+          gap: 15px;
+          text-align: center;
+        }
+
+        .metrics-grid {
           grid-template-columns: 1fr;
         }
 
-        header h1 {
-          font-size: 2em;
+        .container {
+          padding: 15px;
         }
       }
     </style>
   </head>
   <body>
+    <div class="header">
+      <div class="header-left">
+        <div class="logo">FT</div>
+        <div class="header-title">
+          <h1>FiberTrace</h1>
+          <p>Industrial Sorting Dashboard</p>
+        </div>
+      </div>
+      <div class="status-badge">
+        <div class="status-dot"></div>
+        <span>System Operational</span>
+      </div>
+    </div>
+
     <div class="container">
-      <header>
-        <h1>🌾 FiberTrace Dashboard</h1>
-        <p>Real-time Bale Purity Monitoring</p>
-      </header>
+      <div class="metrics-grid">
+        <div class="metric-card throughput">
+          <div class="metric-label">Total Items Scanned</div>
+          <div class="metric-value" id="total">0</div>
+          <div class="metric-change">Real-time processing</div>
+        </div>
 
-      <div class="dashboard">
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-label">Total Scanned</div>
-            <div class="stat-value" id="total">0</div>
+        <div class="metric-card purity">
+          <div class="metric-label">Bale Purity</div>
+          <div class="metric-value" id="purity">0%</div>
+          <div class="metric-change">Target: 98%+</div>
+        </div>
+
+        <div class="metric-card cotton">
+          <div class="metric-label">Pure Cotton</div>
+          <div class="metric-value" id="good">0</div>
+          <div class="metric-change">Certified pure</div>
+        </div>
+
+        <div class="metric-card blend">
+          <div class="metric-label">Blend Detected</div>
+          <div class="metric-value" id="bad">0</div>
+          <div class="metric-change">Mixed materials</div>
+        </div>
+      </div>
+
+      <div class="main-content">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Live Camera Feed</div>
           </div>
-
-          <div class="stat-card good">
-            <div class="stat-label">Good (Cotton)</div>
-            <div class="stat-value" id="good">0</div>
+          <div class="camera-preview-container">
+            <img id="cameraPreview" src="/api/camera/preview" alt="Camera Feed" class="camera-preview" />
           </div>
-
-          <div class="stat-card bad">
-            <div class="stat-label">Bad (Poly-Blend)</div>
-            <div class="stat-value" id="bad">0</div>
+          <div class="scan-controls">
+            <button id="scanButton" class="scan-button" onclick="triggerScan()">
+              🔍 Scan Item
+            </button>
+            <div id="scanResult"></div>
           </div>
         </div>
 
-        <div class="purity-circle" id="purityCircle">
-          <div class="purity-inner">
-            <div class="purity-percent" id="purityPercent">0%</div>
-            <div class="purity-label">Purity</div>
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Purity Gauge</div>
+          </div>
+          <div class="purity-gauge">
+            <div class="gauge-circle" id="purityCircle">
+              <div class="gauge-inner">
+                <div class="gauge-value" id="purityPercent">0%</div>
+                <div class="gauge-label">Purity</div>
+              </div>
+            </div>
+          </div>
+          <div class="last-update">
+            <span class="status-dot" style="display: inline-block; margin-right: 8px;"></span>
+            Last updated: <span id="lastUpdate">Never</span>
           </div>
         </div>
+      </div>
 
-        <div class="last-update">
-          <span class="status-indicator"></span>
-          Last updated: <span id="lastUpdate">Never</span>
+      <div class="certificate-section">
+        <div class="certificate-header">
+          <div class="panel-title">Production Statistics</div>
+          <span class="cert-badge">FiberTrace Certified</span>
         </div>
+        <table class="stats-table">
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th>Value</th>
+              <th>Status</th>
+              <th>Last Update</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Total Items Processed</td>
+              <td id="tableTotal">0</td>
+              <td><span style="color: #10b981;">●</span> Active</td>
+              <td id="tableUpdate">Never</td>
+            </tr>
+            <tr>
+              <td>Pure Cotton Items</td>
+              <td id="tableGood">0</td>
+              <td><span style="color: #4ade80;">●</span> Certified</td>
+              <td id="tableUpdate">-</td>
+            </tr>
+            <tr>
+              <td>Blend Detections</td>
+              <td id="tableBad">0</td>
+              <td><span style="color: #f87171;">●</span> Segregated</td>
+              <td id="tableUpdate">-</td>
+            </tr>
+            <tr>
+              <td>Current Bale Purity</td>
+              <td id="tablePurity">0%</td>
+              <td id="purityStatus"><span style="color: #94a3b8;">●</span> Pending</td>
+              <td id="tableUpdate">-</td>
+            </tr>
+            <tr>
+              <td>Last Scan Result</td>
+              <td id="tableResult">-</td>
+              <td id="resultStatus">-</td>
+              <td id="tableUpdate">-</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -216,13 +507,39 @@
         fetch("/api/stats")
           .then((response) => response.json())
           .then((data) => {
-            document.getElementById("total").textContent = data.total_scanned;
-            document.getElementById("good").textContent = data.good_count;
-            document.getElementById("bad").textContent = data.bad_count;
-            document.getElementById("purityPercent").textContent =
-              data.purity + "%";
-            document.getElementById("lastUpdate").textContent =
-              data.last_update;
+            // Update main metrics
+            document.getElementById("total").textContent = data.total_scanned.toLocaleString();
+            document.getElementById("good").textContent = data.good_count.toLocaleString();
+            document.getElementById("bad").textContent = data.bad_count.toLocaleString();
+            document.getElementById("purity").textContent = data.purity + "%";
+            document.getElementById("purityPercent").textContent = data.purity + "%";
+            document.getElementById("lastUpdate").textContent = data.last_update;
+
+            // Update table
+            document.getElementById("tableTotal").textContent = data.total_scanned.toLocaleString();
+            document.getElementById("tableGood").textContent = data.good_count.toLocaleString();
+            document.getElementById("tableBad").textContent = data.bad_count.toLocaleString();
+            document.getElementById("tablePurity").textContent = data.purity + "%";
+            
+            if (data.last_result) {
+              document.getElementById("tableResult").textContent = data.last_result;
+              const resultStatus = document.getElementById("resultStatus");
+              if (data.last_result === "GOOD") {
+                resultStatus.innerHTML = '<span style="color: #4ade80;">●</span> Pure Cotton';
+              } else {
+                resultStatus.innerHTML = '<span style="color: #f87171;">●</span> Blend Detected';
+              }
+            }
+
+            // Update purity status
+            const purityStatus = document.getElementById("purityStatus");
+            if (data.purity >= 98) {
+              purityStatus.innerHTML = '<span style="color: #10b981;">●</span> Certified (98%+)';
+            } else if (data.purity >= 90) {
+              purityStatus.innerHTML = '<span style="color: #fbbf24;">●</span> Good';
+            } else {
+              purityStatus.innerHTML = '<span style="color: #f87171;">●</span> Needs Improvement';
+            }
 
             // Update purity circle
             const circle = document.getElementById("purityCircle");
@@ -233,9 +550,50 @@
           });
       }
 
-      // Update immediately and then every 2 seconds
+      function updateCameraPreview() {
+        const img = document.getElementById("cameraPreview");
+        img.src = "/api/camera/preview?t=" + new Date().getTime();
+      }
+
+      function triggerScan() {
+        const button = document.getElementById("scanButton");
+        const resultDiv = document.getElementById("scanResult");
+        
+        button.disabled = true;
+        button.textContent = "Scanning...";
+
+        fetch("/api/scan", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              let badgeClass = "bad";
+              if (data.result === "GOOD") badgeClass = "good";
+              resultDiv.innerHTML = `<div class="result-badge ${badgeClass}">${data.result}</div>`;
+              updateDashboard();
+              setTimeout(updateCameraPreview, 500);
+            } else {
+              resultDiv.innerHTML = `<div class="result-badge bad">Error: ${data.error || "Unknown"}</div>`;
+            }
+          })
+          .catch((error) => {
+            resultDiv.innerHTML = `<div class="result-badge bad">Error: ${error.message}</div>`;
+          })
+          .finally(() => {
+            button.disabled = false;
+            button.textContent = "🔍 Scan Item";
+          });
+      }
+
+      // Initialize
       updateDashboard();
       setInterval(updateDashboard, 2000);
+      updateCameraPreview();
+      setInterval(updateCameraPreview, 3000);
     </script>
   </body>
 </html>
