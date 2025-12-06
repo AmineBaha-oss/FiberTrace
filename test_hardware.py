@@ -33,33 +33,54 @@ def test_camera():
     print("="*50)
     
     cap = None
+    frame = None
     
     # Try different camera initialization methods
     print("Initializing camera...")
     print("Trying different methods...")
     
-    # Method 1: Try libcamera (for newer Raspberry Pi OS)
-    print("  → Trying libcamera backend...")
+    # Method 1: Try picamera2 (recommended for newer Pi OS with libcamera)
+    print("  → Trying picamera2 (libcamera)...")
     try:
-        cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
-        if cap.isOpened():
-            # Set resolution for better compatibility
-            cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-            ret, frame = cap.read()
-            if ret and frame is not None:
-                print("  ✓ libcamera backend works!")
-            else:
-                cap.release()
-                cap = None
-    except:
-        if cap:
-            cap.release()
-        cap = None
+        from picamera2 import Picamera2
+        picam2 = Picamera2()
+        picam2.configure(picam2.create_preview_configuration(main={"size": (640, 480)}))
+        picam2.start()
+        time.sleep(2)  # Let camera warm up
+        frame_array = picam2.capture_array()
+        picam2.stop()
+        # Convert RGB to BGR for OpenCV
+        frame = cv2.cvtColor(frame_array, cv2.COLOR_RGB2BGR)
+        print("  ✓ picamera2 works!")
+        cap = "picamera2"  # Mark as successful
+    except ImportError:
+        print("  ⚠️  picamera2 not installed (optional)")
+    except Exception as e:
+        print(f"  ⚠️  picamera2 failed: {e}")
     
-    # Method 2: Try standard v4l2
-    if cap is None or not cap.isOpened():
-        print("  → Trying standard v4l2...")
+    # Method 2: Try libcamera with v4l2 backend (for newer Raspberry Pi OS)
+    if cap is None:
+        print("  → Trying OpenCV with libcamera/v4l2 backend...")
+        try:
+            cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
+            if cap.isOpened():
+                # Set resolution for better compatibility
+                cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+                cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+                ret, frame = cap.read()
+                if ret and frame is not None:
+                    print("  ✓ OpenCV v4l2 backend works!")
+                else:
+                    cap.release()
+                    cap = None
+        except:
+            if cap and cap != "picamera2":
+                cap.release()
+            cap = None
+    
+    # Method 3: Try standard OpenCV initialization
+    if cap is None:
+        print("  → Trying standard OpenCV...")
         try:
             cap = cv2.VideoCapture(0)
             if cap.isOpened():
@@ -67,17 +88,17 @@ def test_camera():
                 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
                 ret, frame = cap.read()
                 if ret and frame is not None:
-                    print("  ✓ Standard v4l2 works!")
+                    print("  ✓ Standard OpenCV works!")
                 else:
                     cap.release()
                     cap = None
         except:
-            if cap:
+            if cap and cap != "picamera2":
                 cap.release()
             cap = None
     
-    # Method 3: Try camera index 1
-    if cap is None or not cap.isOpened():
+    # Method 4: Try camera index 1
+    if cap is None:
         print("  → Trying camera index 1...")
         try:
             cap = cv2.VideoCapture(1)
@@ -89,34 +110,43 @@ def test_camera():
                     cap.release()
                     cap = None
         except:
-            if cap:
+            if cap and cap != "picamera2":
                 cap.release()
             cap = None
     
-    if cap is None or not cap.isOpened():
+    if cap is None or frame is None:
         print("\n❌ ERROR: Could not open camera with any method!")
         print("\nTroubleshooting steps:")
-        print("  1. Check camera connection (ribbon cable)")
-        print("  2. Enable camera: sudo raspi-config")
+        print("  1. Install python3-libcamera (system package):")
+        print("     sudo apt install -y python3-libcamera python3-picamera2")
+        print("  2. Check camera connection (ribbon cable)")
+        print("  3. Enable camera: sudo raspi-config")
         print("     → Interface Options → Camera → Enable")
-        print("  3. Reboot after enabling: sudo reboot")
-        print("  4. Check if camera is detected:")
+        print("  4. Reboot after enabling: sudo reboot")
+        print("  5. Check if camera is detected:")
         print("     vcgencmd get_camera")
-        print("  5. Try using libcamera directly:")
+        print("  6. Try using libcamera directly:")
         print("     libcamera-hello -t 0")
+        print("\n  Note: If using virtual environment, camera may need")
+        print("        system Python (outside venv) for libcamera support.")
         return False
     
     print("✓ Camera opened successfully")
-    print("Taking test photo in 2 seconds...")
-    time.sleep(2)
     
-    try:
+    # If using picamera2, frame is already captured
+    if cap == "picamera2":
+        pass  # Frame already captured
+    else:
+        print("Taking test photo in 2 seconds...")
+        time.sleep(2)
         ret, frame = cap.read()
         if not ret or frame is None:
             print("❌ ERROR: Could not read frame from camera")
-            cap.release()
+            if cap != "picamera2":
+                cap.release()
             return False
-        
+    
+    try:
         print("✓ Frame captured successfully")
         print(f"   Image size: {frame.shape[1]}x{frame.shape[0]} pixels")
         
@@ -133,13 +163,14 @@ def test_camera():
         except:
             print("  (Display not available, but image was saved)")
         
-        cap.release()
+        if cap != "picamera2":
+            cap.release()
         print("✓ Camera test PASSED\n")
         return True
         
     except Exception as e:
         print(f"❌ ERROR: {e}")
-        if cap:
+        if cap and cap != "picamera2":
             cap.release()
         return False
 

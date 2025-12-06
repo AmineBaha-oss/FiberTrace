@@ -102,8 +102,10 @@ cd FiberTrace
 
 ```bash
 sudo apt update
-sudo apt install -y python3-opencv python3-rpi.gpio python3-pip python3-venv
+sudo apt install -y python3-opencv python3-rpi.gpio python3-pip python3-venv python3-libcamera python3-picamera2
 ```
+
+**Important:** `python3-libcamera` and `python3-picamera2` are system packages required for the Raspberry Pi camera. These work best outside virtual environments.
 
 **Option A: Using Virtual Environment (Recommended)**
 
@@ -144,6 +146,7 @@ python3 test_hardware.py
 ```
 
 This will test:
+
 - Camera (takes a test photo)
 - Green LED (blinks)
 - Red LED (blinks)
@@ -237,9 +240,15 @@ Adjust these angles based on your physical setup.
 
 ### Camera not working
 
+- **Install libcamera packages:**
+  ```bash
+  sudo apt install -y python3-libcamera python3-picamera2
+  ```
+- **If using virtual environment:** Camera may need system Python (outside venv) for libcamera support
 - Check camera connection and enable in `raspi-config`
 - Try different camera index: `cv2.VideoCapture(1)` instead of `0`
 - For libcamera: `cv2.VideoCapture(0, cv2.CAP_V4L2)`
+- Test camera directly: `libcamera-hello -t 0`
 
 ### Servo not moving
 
