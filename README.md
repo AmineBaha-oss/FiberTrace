@@ -97,9 +97,27 @@ cd FiberTrace
 
 ```bash
 sudo apt update
-sudo apt install -y python3-opencv python3-rpi.gpio python3-pip
-pip3 install -r requirements.txt
+sudo apt install -y python3-opencv python3-rpi.gpio python3-pip python3-venv
 ```
+
+**Option A: Using Virtual Environment (Recommended)**
+
+```bash
+cd ~/FiberTrace
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+**Option B: System-wide Installation (Simpler, but less clean)**
+
+If you prefer to install system-wide, use the `--break-system-packages` flag:
+
+```bash
+pip3 install --break-system-packages -r requirements.txt
+```
+
+**Note:** OpenCV and RPi.GPIO are already installed via apt, so you mainly need Flask.
 
 ### 3. Enable Camera (if using Pi Camera Module)
 
@@ -116,6 +134,14 @@ sudo reboot
 
 The main demo script scans items when you press Enter:
 
+**If using virtual environment:**
+```bash
+cd ~/FiberTrace
+source venv/bin/activate
+python3 fibertrace_demo.py
+```
+
+**If installed system-wide:**
 ```bash
 python3 fibertrace_demo.py
 ```
@@ -129,6 +155,14 @@ python3 fibertrace_demo.py
 
 In a separate terminal (or run in background):
 
+**If using virtual environment:**
+```bash
+cd ~/FiberTrace
+source venv/bin/activate
+python3 app.py
+```
+
+**If installed system-wide:**
 ```bash
 python3 app.py
 ```
