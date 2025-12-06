@@ -124,8 +124,9 @@ def perform_scan():
         data['last_item_purity'] = item_purity
         data['last_composition'] = composition
         
-        # Save data
-        save_data()
+        # Save data - write directly to file since save_data() uses globals
+        with open(DATA_FILE, 'w') as f:
+            json.dump(data, f)
         
         # Reset after 1 second
         time.sleep(1.0)
