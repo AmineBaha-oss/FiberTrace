@@ -1,13 +1,19 @@
-# FiberTrace - Cotton Bale Purity Scanner
+# FiberTrace - IoT Textile Sorting System
 
-A Raspberry Pi-based system that automatically classifies cotton bales as pure (good) or poly-blend (bad) using computer vision, then routes them to the appropriate bin using a servo-controlled gate.
+A Raspberry Pi-based IoT device that automatically classifies textile materials as pure cotton (good) or poly-blend (bad) using computer vision, then routes them to the appropriate bin using a servo-controlled gate. Features a professional industrial web dashboard for real-time monitoring and control.
 
 ## 🎯 What It Does
 
-- **White paper** = GOOD (pure cotton bale) → Green LED + Gate to Good bin
-- **Blue paper** = BAD (poly-blend bale) → Red LED + Gate to Bad bin
+- **White/Light materials** = GOOD (pure cotton) → Green LED + Gate to Good bin
+- **Blue/Dark materials** = BAD (poly-blend) → Red LED + Gate to Bad bin
 
-The system takes a photo, analyzes the color, and automatically routes items while tracking statistics in both a terminal dashboard and a web-based Flask dashboard.
+The system:
+- Captures images using a Raspberry Pi camera
+- Analyzes color composition (RGB values) to calculate purity percentage
+- Classifies each item with per-item purity (e.g., "95% Cotton, 5% Poly Blend")
+- Controls hardware (LEDs, servo gate) automatically
+- Tracks statistics in real-time
+- Provides a professional web dashboard for monitoring and control
 
 ## 📋 Hardware Requirements
 
@@ -94,39 +100,30 @@ On your Raspberry Pi:
 
 ```bash
 cd ~
-git clone https://github.com/YOUR_USERNAME/FiberTrace.git
+git clone https://github.com/AmineBaha-oss/FiberTrace.git
 cd FiberTrace
 ```
 
-### 2. Install Dependencies
+### 2. Install System Dependencies
 
 ```bash
 sudo apt update
-sudo apt install -y python3-opencv python3-rpi.gpio python3-pip python3-venv python3-libcamera python3-picamera2
+sudo apt install -y python3-opencv python3-rpi.gpio python3-pip python3-libcamera python3-picamera2 rpicam-apps
 ```
 
-**Important:** `python3-libcamera` and `python3-picamera2` are system packages required for the Raspberry Pi camera. These work best outside virtual environments.
+**Important:** `python3-libcamera` and `python3-picamera2` are system packages required for the Raspberry Pi camera. These work best when running without a virtual environment.
 
-**Option A: Using Virtual Environment (Recommended)**
+### 3. Install Python Dependencies (System-wide)
+
+Since the camera requires system packages, we install Python dependencies system-wide:
 
 ```bash
-cd ~/FiberTrace
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+pip3 install --break-system-packages Flask
 ```
 
-**Option B: System-wide Installation (Simpler, but less clean)**
+**Note:** OpenCV (`python3-opencv`) and RPi.GPIO (`python3-rpi.gpio`) are already installed via apt.
 
-If you prefer to install system-wide, use the `--break-system-packages` flag:
-
-```bash
-pip3 install --break-system-packages -r requirements.txt
-```
-
-**Note:** OpenCV and RPi.GPIO are already installed via apt, so you mainly need Flask.
-
-### 3. Enable Camera (if using Pi Camera Module)
+### 4. Enable Camera
 
 ```bash
 sudo raspi-config
@@ -135,94 +132,147 @@ sudo raspi-config
 sudo reboot
 ```
 
+After reboot, verify camera works:
+
+```bash
+libcamera-hello -t 0
+```
+
 ## 💻 Usage
 
-### Testing Hardware First
+### Step 1: Test Hardware
 
 Before running the main demo, test all hardware components:
 
 ```bash
+cd ~/FiberTrace
 python3 test_hardware.py
 ```
 
 This will test:
+- **Camera** - Takes a test photo and saves it
+- **Green LED** - Blinks and asks for confirmation
+- **Red LED** - Blinks and asks for confirmation
+- **Servo motor** - Sweeps through angles (center → good → bad → center)
 
-- Camera (takes a test photo)
-- Green LED (blinks)
-- Red LED (blinks)
-- Servo motor (sweeps through angles)
+Fix any issues before proceeding.
 
-Fix any issues before proceeding to the main demo.
+### Step 2: Run the Flask Dashboard
 
-### Running the Demo Script
-
-The main demo script scans items when you press Enter:
-
-**If using virtual environment:**
+The Flask dashboard provides a professional web interface with camera preview and scan control:
 
 ```bash
 cd ~/FiberTrace
-source venv/bin/activate
-python3 fibertrace_demo.py
+python3 app.py
 ```
 
-**If installed system-wide:**
+The dashboard will start and show:
+```
+Starting FiberTrace Dashboard...
+Access at: http://localhost:5000
+Or from another device: http://<raspberry-pi-ip>:5000
+```
+
+**Access the dashboard:**
+- **From Pi:** http://localhost:5000
+- **From other devices:** http://192.168.0.114:5000 (use your Pi's IP)
+
+### Step 3: Use the Dashboard
+
+The web dashboard provides:
+
+1. **Real-time Statistics:**
+   - Total items processed
+   - Bale purity percentage
+   - Pure cotton count
+   - Blend detections count
+
+2. **Live Camera Preview:**
+   - Shows last scanned image
+   - Updates when you click "Scan Item"
+
+3. **Scan Control:**
+   - Click "Scan Item" button to trigger a scan
+   - See result immediately (GOOD/BAD with purity %)
+   - View composition breakdown (e.g., "95% Cotton, 5% Poly Blend")
+
+4. **Purity Gauge:**
+   - Visual circular gauge showing overall bale purity
+   - Color-coded status (Green = Certified 98%+, Yellow = Good 90%+, Red = Needs Improvement)
+
+5. **Production Statistics Table:**
+   - Detailed metrics with timestamps
+   - Last item purity and composition
+   - Status indicators
+
+### Alternative: Terminal Demo Script
+
+You can also run the terminal-based demo:
 
 ```bash
+cd ~/FiberTrace
 python3 fibertrace_demo.py
 ```
 
 **Instructions:**
-
 1. Place white or blue paper under the camera
 2. Press ENTER in the terminal to scan
-3. Watch LEDs light up, servo move, and dashboard update
+3. Watch LEDs light up, servo move, and terminal dashboard update
 
-### Running the Flask Dashboard
-
-In a separate terminal (or run in background):
-
-**If using virtual environment:**
-
-```bash
-cd ~/FiberTrace
-source venv/bin/activate
-python3 app.py
-```
-
-**If installed system-wide:**
-
-```bash
-python3 app.py
-```
-
-Then open a web browser and navigate to:
-
-- **Local:** http://localhost:5000
-- **From another device:** http://<raspberry-pi-ip>:5000
-
-The dashboard updates automatically every 2 seconds with real-time statistics.
-
-### Running Both Together
-
-You can run both simultaneously:
-
-```bash
-# Terminal 1: Demo script
-python3 fibertrace_demo.py
-
-# Terminal 2: Flask dashboard
-python3 app.py
-```
+**Note:** The Flask dashboard and terminal script share the same data file, so you can run both simultaneously if desired.
 
 ## 📊 Features
 
-- **Automatic Classification:** Uses OpenCV to analyze color and classify bales
+### Core Functionality
+
+- **Automatic Classification:** Uses OpenCV to analyze RGB color values and classify materials
+- **Per-Item Purity Calculation:** Each scan calculates purity percentage (0-100%)
+- **Composition Breakdown:** Shows exact blend ratio (e.g., "88% Cotton, 12% Poly Blend")
 - **Visual Feedback:** Green/Red LEDs indicate classification result
 - **Servo Gate Control:** Automatically routes items to correct bin
-- **Terminal Dashboard:** Real-time statistics in the console
-- **Web Dashboard:** Beautiful Flask-based web interface
+- **Real-time Statistics:** Tracks total scanned, good/bad counts, and overall purity
+
+### Web Dashboard Features
+
+- **Professional Industrial UI:** Dark theme with glassmorphism effects
+- **Live Camera Preview:** Shows last scanned image
+- **Scan Control:** Trigger scans directly from web interface
+- **Animated Updates:** Smooth number animations and visual feedback
+- **Scanning Animation:** Visual scanning line effect during scans
+- **Real-time Updates:** Auto-refreshes every 2 seconds
+- **Responsive Design:** Works on desktop, tablet, and mobile
+
+### Technical Features
+
+- **Camera Support:** Works with picamera2 (libcamera) and OpenCV fallback
 - **Data Persistence:** Statistics saved to JSON file
+- **Hardware Control:** Direct GPIO control for LEDs and servo
+- **Error Handling:** Graceful fallbacks for camera issues
+
+## 🔬 How It Works: Sensor Technology
+
+### Light Detection Process
+
+1. **Image Capture:** Camera sensor captures RGB image (640x480 pixels)
+2. **Color Analysis:** Algorithm analyzes Red, Green, Blue channel values
+3. **Purity Calculation:** 
+   - White/light materials → High RGB values → High cotton purity
+   - Blue materials → High blue, low red/green → Poly-blend detected
+4. **Classification:** Threshold-based decision (blue dominant = blend)
+5. **Hardware Response:** LEDs and servo gate respond instantly
+
+### Detection Algorithm
+
+- **Region of Interest:** Focuses on center 25% of image (most reliable)
+- **Color Ratios:** Calculates percentage of each color channel
+- **Purity Formula:** `cotton_purity = (red_ratio + green_ratio) * 100`
+- **Threshold:** Blue channel > Red+Green by 20+ units = blend detected
+
+**Example:**
+- White cotton: B=200, G=210, R=205 → 95%+ purity → GOOD
+- Blue poly: B=180, G=80, R=70 → 45% purity → BAD
+
+For detailed technical explanation, see the code comments in `fibertrace_demo.py` (classify_item function).
 
 ## 🔧 Configuration
 
@@ -240,15 +290,22 @@ Adjust these angles based on your physical setup.
 
 ### Camera not working
 
-- **Install libcamera packages:**
+- **Install camera packages:**
   ```bash
-  sudo apt install -y python3-libcamera python3-picamera2
+  sudo apt install -y python3-libcamera python3-picamera2 rpicam-apps
   ```
-- **If using virtual environment:** Camera may need system Python (outside venv) for libcamera support
-- Check camera connection and enable in `raspi-config`
-- Try different camera index: `cv2.VideoCapture(1)` instead of `0`
-- For libcamera: `cv2.VideoCapture(0, cv2.CAP_V4L2)`
-- Test camera directly: `libcamera-hello -t 0`
+- **Enable camera:**
+  ```bash
+  sudo raspi-config
+  # Interface Options → Camera → Enable
+  sudo reboot
+  ```
+- **Test camera:**
+  ```bash
+  libcamera-hello -t 0
+  vcgencmd get_camera  # Should show: supported=1 detected=1
+  ```
+- **If OpenCV fails:** The system automatically falls back to `rpicam-jpeg`
 
 ### Servo not moving
 
@@ -266,19 +323,39 @@ Adjust these angles based on your physical setup.
 
 - Make sure firewall allows port 5000: `sudo ufw allow 5000`
 - Check Pi's IP address: `hostname -I`
-- Ensure `fibertrace_demo.py` has run at least once to create data file
+- Ensure camera and GPIO are working (run `test_hardware.py` first)
+
+### Values not updating in dashboard
+
+- Make sure Flask app is running: `python3 app.py`
+- Check that data file exists: `ls fibertrace_data.json`
+- Try scanning an item to create/update the data file
 
 ## 📁 Project Structure
 
 ```
 FiberTrace/
-├── fibertrace_demo.py    # Main demo script
+├── fibertrace_demo.py    # Main demo script (terminal-based)
 ├── app.py                 # Flask dashboard server
+├── test_hardware.py       # Hardware testing script
 ├── templates/
-│   └── dashboard.html     # Web dashboard UI
+│   └── dashboard.html     # Web dashboard UI (industrial design)
 ├── requirements.txt       # Python dependencies
 ├── README.md             # This file
+├── SETUP.md              # GitHub setup instructions
 └── fibertrace_data.json  # Statistics data (created at runtime)
+```
+
+## 🌐 Web Dashboard Access
+
+Once Flask is running, access the dashboard from:
+
+- **Local (on Pi):** http://localhost:5000
+- **Network (other devices):** http://<raspberry-pi-ip>:5000
+
+To find your Pi's IP:
+```bash
+hostname -I
 ```
 
 ## 🔮 Future Enhancements
@@ -286,9 +363,11 @@ FiberTrace/
 - Button trigger instead of Enter key
 - Automatic conveyor belt detection
 - Machine learning model for better classification
+- Hyperspectral camera support (900-1700nm wavelength)
 - Database storage for historical data
 - Email/SMS alerts for low purity
 - Modular refactoring (like YVLSWITCH project)
+- Real-time video feed option
 
 ## 📝 License
 
@@ -296,4 +375,6 @@ This project is open source and available for educational purposes.
 
 ## 👥 Credits
 
-Built for automated cotton bale quality control using Raspberry Pi and computer vision.
+Built for automated textile sorting and quality control using Raspberry Pi and computer vision.
+
+**Repository:** https://github.com/AmineBaha-oss/FiberTrace
