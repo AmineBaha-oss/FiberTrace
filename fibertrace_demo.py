@@ -196,9 +196,8 @@ def get_frame(cap):
 
 def classify_item(frame):
     """
-    Classify the item under the camera as GOOD (white) or BAD (blue).
-    Very simple color-based check for demo purposes.
-    Returns: "GOOD" or "BAD"
+    Classify the item and calculate purity percentage.
+    Returns: dict with 'result' (GOOD/BAD), 'purity' (0-100%), and 'composition'
     """
     # Use a central crop region of interest (ROI)
     h, w, _ = frame.shape
@@ -216,18 +215,51 @@ def classify_item(frame):
     mean_color = roi.mean(axis=0).mean(axis=0)
     mean_b, mean_g, mean_r = mean_color
     
-    # Decide: simple logic
-    # If blue channel significantly higher than red & green -> BAD (blue paper)
-    # Else -> GOOD (white/light paper)
+    # Calculate color ratios
+    total = mean_b + mean_g + mean_r
+    if total > 0:
+        blue_ratio = mean_b / total
+        green_ratio = mean_g / total
+        red_ratio = mean_r / total
+    else:
+        blue_ratio = green_ratio = red_ratio = 0.33
+    
+    # Calculate purity percentage
+    # White/light colors (high red+green, low blue) = high cotton purity
+    # Blue colors = poly blend contamination
+    # Purity is based on how "white" vs "blue" the item is
+    cotton_purity = (red_ratio + green_ratio) * 100  # Higher red+green = more cotton-like
+    poly_contamination = blue_ratio * 100  # Higher blue = more poly blend
+    
+    # Determine if it's GOOD (pure cotton) or BAD (blend)
+    # Threshold: if blue is significantly dominant, it's a blend
     blue_dominant = (mean_b > mean_g + 20) and (mean_b > mean_r + 20)
     
     # For debugging: print color values
     print(f"DEBUG: mean BGR = ({mean_b:.1f}, {mean_g:.1f}, {mean_r:.1f})")
+    print(f"DEBUG: Cotton purity = {cotton_purity:.1f}%, Poly contamination = {poly_contamination:.1f}%")
     
     if blue_dominant:
-        return "BAD"
+        result = "BAD"
+        # For blends, show the contamination percentage
+        purity = max(0, 100 - poly_contamination)
+        composition = f"{purity:.0f}% Cotton, {poly_contamination:.0f}% Poly Blend"
     else:
-        return "GOOD"
+        result = "GOOD"
+        # For pure cotton, show high purity
+        purity = min(100, cotton_purity + 10)  # Add small buffer for pure white
+        if purity >= 98:
+            composition = "100% Pure Cotton"
+        else:
+            composition = f"{purity:.0f}% Cotton"
+    
+    return {
+        'result': result,
+        'purity': round(purity, 1),
+        'composition': composition,
+        'cotton_pct': round(cotton_purity, 1),
+        'poly_pct': round(poly_contamination, 1)
+    }
 
 # ------------------------
 # DASHBOARD PRINTING
@@ -288,23 +320,27 @@ def main():
             # cv2.waitKey(1)
             
             # Classify
-            result = classify_item(frame)
+            classification = classify_item(frame)
+            result = classification['result']
+            purity = classification['purity']
+            composition = classification['composition']
+            
             total_scanned += 1
             
             if result == "GOOD":
                 good_count += 1
-                print("RESULT: GOOD (cotton / pure bale)")
+                print(f"RESULT: GOOD - {composition} (Purity: {purity}%)")
                 GPIO.output(GREEN_LED_PIN, GPIO.HIGH)
                 GPIO.output(RED_LED_PIN, GPIO.LOW)
                 move_gate(GOOD_ANGLE, servo_pwm)
             else:
                 bad_count += 1
-                print("RESULT: BAD (poly-blend / contamination)")
+                print(f"RESULT: BAD - {composition} (Purity: {purity}%)")
                 GPIO.output(GREEN_LED_PIN, GPIO.LOW)
                 GPIO.output(RED_LED_PIN, GPIO.HIGH)
                 move_gate(BAD_ANGLE, servo_pwm)
             
-            # Save data for Flask dashboard
+            # Save data for Flask dashboard (include item purity)
             save_data()
             print_dashboard()
             

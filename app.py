@@ -94,8 +94,11 @@ def perform_scan():
         # Save preview image
         cv2.imwrite(CAMERA_IMAGE_FILE, frame)
         
-        # Classify
-        result = classify_item(frame)
+        # Classify (now returns dict with purity info)
+        classification = classify_item(frame)
+        result = classification['result']
+        item_purity = classification['purity']
+        composition = classification['composition']
         
         # Load current data
         data = load_data()
@@ -118,6 +121,8 @@ def perform_scan():
         
         data['last_update'] = time.time()
         data['last_result'] = result
+        data['last_item_purity'] = item_purity
+        data['last_composition'] = composition
         
         # Save data
         save_data()
@@ -129,7 +134,13 @@ def perform_scan():
         if servo_pwm:
             move_gate(CENTER_ANGLE, servo_pwm)
         
-        return {"success": True, "result": result, "data": data}
+        return {
+            "success": True, 
+            "result": result, 
+            "purity": item_purity,
+            "composition": composition,
+            "data": data
+        }
         
     except Exception as e:
         return {"success": False, "error": str(e)}
@@ -173,7 +184,9 @@ def get_stats():
         'bad_count': bad,
         'purity': round(purity, 1),
         'last_update': last_update_str,
-        'last_result': data.get('last_result', 'N/A')
+        'last_result': data.get('last_result', 'N/A'),
+        'last_item_purity': data.get('last_item_purity', None),
+        'last_composition': data.get('last_composition', 'N/A')
     })
 
 @app.route('/api/camera/preview')

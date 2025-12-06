@@ -523,6 +523,12 @@
               <td id="resultStatus">-</td>
               <td id="tableUpdate">-</td>
             </tr>
+            <tr>
+              <td>Last Item Purity</td>
+              <td id="tableItemPurity">-</td>
+              <td id="tableComposition">-</td>
+              <td id="tableUpdate">-</td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -567,6 +573,12 @@
                 resultStatus.innerHTML =
                   '<span style="color: #f87171;">●</span> Blend Detected';
               }
+            }
+            
+            // Update item purity info
+            if (data.last_item_purity !== null && data.last_item_purity !== undefined) {
+              document.getElementById("tableItemPurity").textContent = data.last_item_purity + "%";
+              document.getElementById("tableComposition").textContent = data.last_composition || "-";
             }
 
             // Update purity status
@@ -619,7 +631,16 @@
             if (data.success) {
               let badgeClass = "bad";
               if (data.result === "GOOD") badgeClass = "good";
-              resultDiv.innerHTML = `<div class="result-badge ${badgeClass}">${data.result}</div>`;
+              
+              // Show result with purity info
+              let resultText = `${data.result}`;
+              if (data.purity !== undefined) {
+                resultText += ` - ${data.purity}%`;
+              }
+              if (data.composition) {
+                resultText += `<br><small style="font-size: 0.8em; opacity: 0.9;">${data.composition}</small>`;
+              }
+              resultDiv.innerHTML = `<div class="result-badge ${badgeClass}">${resultText}</div>`;
               
               // Wait a bit for data to be saved, then update dashboard
               setTimeout(() => {
