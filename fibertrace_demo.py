@@ -52,11 +52,27 @@ def load_data():
         try:
             with open(DATA_FILE, 'r') as f:
                 data = json.load(f)
+                if data is None:
+                    return {
+                        'total_scanned': 0,
+                        'good_count': 0,
+                        'bad_count': 0,
+                        'last_update': 0
+                    }
                 total_scanned = data.get('total_scanned', 0)
                 good_count = data.get('good_count', 0)
                 bad_count = data.get('bad_count', 0)
+                return data
         except:
             pass  # If file is corrupted, start fresh
+    
+    # Return default if file doesn't exist or load failed
+    return {
+        'total_scanned': 0,
+        'good_count': 0,
+        'bad_count': 0,
+        'last_update': 0
+    }
 
 def save_data():
     """Save statistics to JSON file for Flask dashboard."""
