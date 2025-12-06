@@ -12,7 +12,8 @@
       }
 
       body {
-        font-family: "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+        font-family: "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont,
+          sans-serif;
         background: #0a0e27;
         color: #e0e6ed;
         min-height: 100vh;
@@ -79,8 +80,13 @@
       }
 
       @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.5; }
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
       }
 
       .container {
@@ -131,11 +137,21 @@
         color: #10b981;
       }
 
-      .metric-card.throughput .metric-value { color: #60a5fa; }
-      .metric-card.purity .metric-value { color: #34d399; }
-      .metric-card.cotton .metric-value { color: #4ade80; }
-      .metric-card.blend .metric-value { color: #f87171; }
-      .metric-card.polyester .metric-value { color: #818cf8; }
+      .metric-card.throughput .metric-value {
+        color: #60a5fa;
+      }
+      .metric-card.purity .metric-value {
+        color: #34d399;
+      }
+      .metric-card.cotton .metric-value {
+        color: #4ade80;
+      }
+      .metric-card.blend .metric-value {
+        color: #f87171;
+      }
+      .metric-card.polyester .metric-value {
+        color: #818cf8;
+      }
 
       .main-content {
         display: grid;
@@ -423,7 +439,12 @@
             <div class="panel-title">Live Camera Feed</div>
           </div>
           <div class="camera-preview-container">
-            <img id="cameraPreview" src="/api/camera/preview" alt="Camera Feed" class="camera-preview" />
+            <img
+              id="cameraPreview"
+              src="/api/camera/preview"
+              alt="Camera Feed"
+              class="camera-preview"
+            />
           </div>
           <div class="scan-controls">
             <button id="scanButton" class="scan-button" onclick="triggerScan()">
@@ -446,7 +467,10 @@
             </div>
           </div>
           <div class="last-update">
-            <span class="status-dot" style="display: inline-block; margin-right: 8px;"></span>
+            <span
+              class="status-dot"
+              style="display: inline-block; margin-right: 8px"
+            ></span>
             Last updated: <span id="lastUpdate">Never</span>
           </div>
         </div>
@@ -470,25 +494,27 @@
             <tr>
               <td>Total Items Processed</td>
               <td id="tableTotal">0</td>
-              <td><span style="color: #10b981;">●</span> Active</td>
+              <td><span style="color: #10b981">●</span> Active</td>
               <td id="tableUpdate">Never</td>
             </tr>
             <tr>
               <td>Pure Cotton Items</td>
               <td id="tableGood">0</td>
-              <td><span style="color: #4ade80;">●</span> Certified</td>
+              <td><span style="color: #4ade80">●</span> Certified</td>
               <td id="tableUpdate">-</td>
             </tr>
             <tr>
               <td>Blend Detections</td>
               <td id="tableBad">0</td>
-              <td><span style="color: #f87171;">●</span> Segregated</td>
+              <td><span style="color: #f87171">●</span> Segregated</td>
               <td id="tableUpdate">-</td>
             </tr>
             <tr>
               <td>Current Bale Purity</td>
               <td id="tablePurity">0%</td>
-              <td id="purityStatus"><span style="color: #94a3b8;">●</span> Pending</td>
+              <td id="purityStatus">
+                <span style="color: #94a3b8">●</span> Pending
+              </td>
               <td id="tableUpdate">-</td>
             </tr>
             <tr>
@@ -508,42 +534,61 @@
           .then((response) => response.json())
           .then((data) => {
             // Update main metrics
-            document.getElementById("total").textContent = data.total_scanned.toLocaleString();
-            document.getElementById("good").textContent = data.good_count.toLocaleString();
-            document.getElementById("bad").textContent = data.bad_count.toLocaleString();
+            document.getElementById("total").textContent =
+              data.total_scanned.toLocaleString();
+            document.getElementById("good").textContent =
+              data.good_count.toLocaleString();
+            document.getElementById("bad").textContent =
+              data.bad_count.toLocaleString();
             document.getElementById("purity").textContent = data.purity + "%";
-            document.getElementById("purityPercent").textContent = data.purity + "%";
-            document.getElementById("lastUpdate").textContent = data.last_update;
+            document.getElementById("purityPercent").textContent =
+              data.purity + "%";
+            document.getElementById("lastUpdate").textContent =
+              data.last_update;
 
             // Update table
-            document.getElementById("tableTotal").textContent = data.total_scanned.toLocaleString();
-            document.getElementById("tableGood").textContent = data.good_count.toLocaleString();
-            document.getElementById("tableBad").textContent = data.bad_count.toLocaleString();
-            document.getElementById("tablePurity").textContent = data.purity + "%";
-            
+            document.getElementById("tableTotal").textContent =
+              data.total_scanned.toLocaleString();
+            document.getElementById("tableGood").textContent =
+              data.good_count.toLocaleString();
+            document.getElementById("tableBad").textContent =
+              data.bad_count.toLocaleString();
+            document.getElementById("tablePurity").textContent =
+              data.purity + "%";
+
             if (data.last_result) {
-              document.getElementById("tableResult").textContent = data.last_result;
+              document.getElementById("tableResult").textContent =
+                data.last_result;
               const resultStatus = document.getElementById("resultStatus");
               if (data.last_result === "GOOD") {
-                resultStatus.innerHTML = '<span style="color: #4ade80;">●</span> Pure Cotton';
+                resultStatus.innerHTML =
+                  '<span style="color: #4ade80;">●</span> Pure Cotton';
               } else {
-                resultStatus.innerHTML = '<span style="color: #f87171;">●</span> Blend Detected';
+                resultStatus.innerHTML =
+                  '<span style="color: #f87171;">●</span> Blend Detected';
               }
             }
 
             // Update purity status
             const purityStatus = document.getElementById("purityStatus");
             if (data.purity >= 98) {
-              purityStatus.innerHTML = '<span style="color: #10b981;">●</span> Certified (98%+)';
+              purityStatus.innerHTML =
+                '<span style="color: #10b981;">●</span> Certified (98%+)';
             } else if (data.purity >= 90) {
-              purityStatus.innerHTML = '<span style="color: #fbbf24;">●</span> Good';
+              purityStatus.innerHTML =
+                '<span style="color: #fbbf24;">●</span> Good';
             } else {
-              purityStatus.innerHTML = '<span style="color: #f87171;">●</span> Needs Improvement';
+              purityStatus.innerHTML =
+                '<span style="color: #f87171;">●</span> Needs Improvement';
             }
 
-            // Update purity circle
+            // Update purity circle gauge
             const circle = document.getElementById("purityCircle");
-            circle.style.setProperty("--purity", data.purity);
+            if (circle) {
+              circle.style.setProperty("--purity", data.purity);
+              // Force a reflow to ensure CSS variable update is applied
+              circle.offsetHeight;
+            }
           })
           .catch((error) => {
             console.error("Error fetching stats:", error);
@@ -559,7 +604,7 @@
       function triggerScan() {
         const button = document.getElementById("scanButton");
         const resultDiv = document.getElementById("scanResult");
-        
+
         button.disabled = true;
         button.textContent = "Scanning...";
 
@@ -575,10 +620,16 @@
               let badgeClass = "bad";
               if (data.result === "GOOD") badgeClass = "good";
               resultDiv.innerHTML = `<div class="result-badge ${badgeClass}">${data.result}</div>`;
-              updateDashboard();
-              setTimeout(updateCameraPreview, 500);
+              
+              // Wait a bit for data to be saved, then update dashboard
+              setTimeout(() => {
+                updateDashboard();
+                updateCameraPreview();
+              }, 300);
             } else {
-              resultDiv.innerHTML = `<div class="result-badge bad">Error: ${data.error || "Unknown"}</div>`;
+              resultDiv.innerHTML = `<div class="result-badge bad">Error: ${
+                data.error || "Unknown"
+              }</div>`;
             }
           })
           .catch((error) => {
