@@ -551,6 +551,7 @@
       }
 
       function updateCameraPreview() {
+        // Only update when a scan is performed, not automatically
         const img = document.getElementById("cameraPreview");
         img.src = "/api/camera/preview?t=" + new Date().getTime();
       }
@@ -592,8 +593,8 @@
       // Initialize
       updateDashboard();
       setInterval(updateDashboard, 2000);
-      updateCameraPreview();
-      setInterval(updateCameraPreview, 3000);
+      // Don't auto-update camera - only show last scanned image
+      updateCameraPreview(); // Load once on page load
     </script>
   </body>
 </html>

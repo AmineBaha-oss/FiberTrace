@@ -144,6 +144,14 @@ def get_stats():
     """API endpoint to get current statistics."""
     data = load_data()
     
+    if data is None:
+        data = {
+            'total_scanned': 0,
+            'good_count': 0,
+            'bad_count': 0,
+            'last_update': 0
+        }
+    
     total = data.get('total_scanned', 0)
     good = data.get('good_count', 0)
     bad = data.get('bad_count', 0)
@@ -170,17 +178,16 @@ def get_stats():
 
 @app.route('/api/camera/preview')
 def camera_preview():
-    """Get latest camera preview image."""
-    global camera_cap
+    """Get last scanned image (not live feed)."""
     try:
-        frame = get_frame(camera_cap)
-        if frame is not None:
-            cv2.imwrite(CAMERA_IMAGE_FILE, frame)
+        # Return the last scanned image if it exists
+        if os.path.exists(CAMERA_IMAGE_FILE):
             with open(CAMERA_IMAGE_FILE, 'rb') as f:
                 image_data = f.read()
             return Response(image_data, mimetype='image/jpeg')
         else:
-            return Response("Camera not available", status=503)
+            # Return a placeholder or empty response
+            return Response("No image available yet. Click Scan to capture.", status=404, mimetype='text/plain')
     except Exception as e:
         return Response(f"Error: {str(e)}", status=500)
 
