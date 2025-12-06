@@ -495,19 +495,19 @@
               <td>Total Items Processed</td>
               <td id="tableTotal">0</td>
               <td><span style="color: #10b981">●</span> Active</td>
-              <td id="tableUpdate">Never</td>
+              <td id="tableUpdate1">Never</td>
             </tr>
             <tr>
               <td>Pure Cotton Items</td>
               <td id="tableGood">0</td>
               <td><span style="color: #4ade80">●</span> Certified</td>
-              <td id="tableUpdate">-</td>
+              <td id="tableUpdate2">-</td>
             </tr>
             <tr>
               <td>Blend Detections</td>
               <td id="tableBad">0</td>
               <td><span style="color: #f87171">●</span> Segregated</td>
-              <td id="tableUpdate">-</td>
+              <td id="tableUpdate3">-</td>
             </tr>
             <tr>
               <td>Current Bale Purity</td>
@@ -515,19 +515,19 @@
               <td id="purityStatus">
                 <span style="color: #94a3b8">●</span> Pending
               </td>
-              <td id="tableUpdate">-</td>
+              <td id="tableUpdate4">-</td>
             </tr>
             <tr>
               <td>Last Scan Result</td>
               <td id="tableResult">-</td>
               <td id="resultStatus">-</td>
-              <td id="tableUpdate">-</td>
+              <td id="tableUpdate5">-</td>
             </tr>
             <tr>
               <td>Last Item Purity</td>
               <td id="tableItemPurity">-</td>
               <td id="tableComposition">-</td>
-              <td id="tableUpdate">-</td>
+              <td id="tableUpdate6">-</td>
             </tr>
           </tbody>
         </table>
@@ -561,24 +561,47 @@
               data.bad_count.toLocaleString();
             document.getElementById("tablePurity").textContent =
               data.purity + "%";
+            
+            // Update last update timestamps
+            document.getElementById("tableUpdate1").textContent = data.last_update;
+            document.getElementById("tableUpdate2").textContent = data.last_update;
+            document.getElementById("tableUpdate3").textContent = data.last_update;
+            document.getElementById("tableUpdate4").textContent = data.last_update;
+            document.getElementById("tableUpdate5").textContent = data.last_update;
+            document.getElementById("tableUpdate6").textContent = data.last_update;
 
-            if (data.last_result) {
+            // Update last result
+            if (data.last_result && data.last_result !== 'N/A') {
               document.getElementById("tableResult").textContent =
                 data.last_result;
               const resultStatus = document.getElementById("resultStatus");
               if (data.last_result === "GOOD") {
                 resultStatus.innerHTML =
                   '<span style="color: #4ade80;">●</span> Pure Cotton';
-              } else {
+              } else if (data.last_result === "BAD") {
                 resultStatus.innerHTML =
                   '<span style="color: #f87171;">●</span> Blend Detected';
+              } else {
+                resultStatus.innerHTML = '-';
               }
+            } else {
+              document.getElementById("tableResult").textContent = "-";
+              document.getElementById("resultStatus").innerHTML = "-";
             }
-            
+
             // Update item purity info
-            if (data.last_item_purity !== null && data.last_item_purity !== undefined) {
-              document.getElementById("tableItemPurity").textContent = data.last_item_purity + "%";
-              document.getElementById("tableComposition").textContent = data.last_composition || "-";
+            if (
+              data.last_item_purity !== null &&
+              data.last_item_purity !== undefined &&
+              data.last_item_purity !== 'N/A'
+            ) {
+              document.getElementById("tableItemPurity").textContent =
+                data.last_item_purity + "%";
+              document.getElementById("tableComposition").textContent =
+                data.last_composition || "-";
+            } else {
+              document.getElementById("tableItemPurity").textContent = "-";
+              document.getElementById("tableComposition").textContent = "-";
             }
 
             // Update purity status
@@ -597,9 +620,10 @@
             // Update purity circle gauge
             const circle = document.getElementById("purityCircle");
             if (circle) {
-              circle.style.setProperty("--purity", data.purity);
+              const purityValue = parseFloat(data.purity) || 0;
+              circle.style.setProperty("--purity", purityValue);
               // Force a reflow to ensure CSS variable update is applied
-              circle.offsetHeight;
+              void circle.offsetHeight;
             }
           })
           .catch((error) => {
@@ -631,7 +655,7 @@
             if (data.success) {
               let badgeClass = "bad";
               if (data.result === "GOOD") badgeClass = "good";
-              
+
               // Show result with purity info
               let resultText = `${data.result}`;
               if (data.purity !== undefined) {
@@ -641,7 +665,7 @@
                 resultText += `<br><small style="font-size: 0.8em; opacity: 0.9;">${data.composition}</small>`;
               }
               resultDiv.innerHTML = `<div class="result-badge ${badgeClass}">${resultText}</div>`;
-              
+
               // Wait a bit for data to be saved, then update dashboard
               setTimeout(() => {
                 updateDashboard();
