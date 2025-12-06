@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FiberTrace Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .dashboard {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-card.good {
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+        }
+        
+        .stat-card.bad {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+        
+        .stat-card.purity {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .stat-value {
+            font-size: 3em;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .purity-circle {
+            width: 200px;
+            height: 200px;
+            margin: 30px auto;
+            position: relative;
+            border-radius: 50%;
+            background: conic-gradient(
+                #4ade80 0deg,
+                #4ade80 calc(var(--purity) * 3.6deg),
+                #e5e7eb calc(var(--purity) * 3.6deg),
+                #e5e7eb 360deg
+            );
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .purity-inner {
+            width: 150px;
+            height: 150px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .purity-percent {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .purity-label {
+            font-size: 0.9em;
+            color: #666;
+            text-transform: uppercase;
+        }
+        
+        .last-update {
+            text-align: center;
+            color: #666;
+            margin-top: 20px;
+            font-size: 0.9em;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #4ade80;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌾 FiberTrace Dashboard</h1>
+            <p>Real-time Bale Purity Monitoring</p>
+        </header>
+        
+        <div class="dashboard">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Total Scanned</div>
+                    <div class="stat-value" id="total">0</div>
+                </div>
+                
+                <div class="stat-card good">
+                    <div class="stat-label">Good (Cotton)</div>
+                    <div class="stat-value" id="good">0</div>
+                </div>
+                
+                <div class="stat-card bad">
+                    <div class="stat-label">Bad (Poly-Blend)</div>
+                    <div class="stat-value" id="bad">0</div>
+                </div>
+            </div>
+            
+            <div class="purity-circle" id="purityCircle">
+                <div class="purity-inner">
+                    <div class="purity-percent" id="purityPercent">0%</div>
+                    <div class="purity-label">Purity</div>
+                </div>
+            </div>
+            
+            <div class="last-update">
+                <span class="status-indicator"></span>
+                Last updated: <span id="lastUpdate">Never</span>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function updateDashboard() {
+            fetch('/api/stats')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('total').textContent = data.total_scanned;
+                    document.getElementById('good').textContent = data.good_count;
+                    document.getElementById('bad').textContent = data.bad_count;
+                    document.getElementById('purityPercent').textContent = data.purity + '%';
+                    document.getElementById('lastUpdate').textContent = data.last_update;
+                    
+                    // Update purity circle
+                    const circle = document.getElementById('purityCircle');
+                    circle.style.setProperty('--purity', data.purity);
+                })
+                .catch(error => {
+                    console.error('Error fetching stats:', error);
+                });
+        }
+        
+        // Update immediately and then every 2 seconds
+        updateDashboard();
+        setInterval(updateDashboard, 2000);
+    </script>
+</body>
+</html>
+
