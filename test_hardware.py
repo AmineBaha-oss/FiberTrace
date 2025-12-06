@@ -260,13 +260,18 @@ def test_camera():
         print("✓ Test image saved as 'test_camera.jpg'")
         
         # Show image for 3 seconds (if display available)
-        try:
-            print("Displaying image for 3 seconds...")
-            cv2.imshow('Camera Test - Press any key to continue', frame)
-            cv2.waitKey(3000)
-            cv2.destroyAllWindows()
-        except:
-            print("  (Display not available, but image was saved)")
+        # Skip display if no X11 (headless mode is fine)
+        import os
+        if 'DISPLAY' in os.environ:
+            try:
+                print("Displaying image for 3 seconds...")
+                cv2.imshow('Camera Test - Press any key to continue', frame)
+                cv2.waitKey(3000)
+                cv2.destroyAllWindows()
+            except:
+                print("  (Display not available, but image was saved)")
+        else:
+            print("  (Running headless - no display needed, image saved)")
         
         if cap != "picamera2":
             cap.release()
