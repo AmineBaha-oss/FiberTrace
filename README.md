@@ -23,32 +23,36 @@ The system takes a photo, analyzes the color, and automatically routes items whi
 
 ### GPIO Pin Mapping (BCM Mode)
 
-| Component | GPIO (BCM) | Physical Pin | Notes |
-|-----------|------------|--------------|-------|
-| Green LED | GPIO 17 | Pin 11 | Good bale indicator |
-| Red LED | GPIO 27 | Pin 13 | Bad bale indicator |
-| Servo Signal | GPIO 18 | Pin 12 | PWM-capable pin |
-| 5V Power | - | Pin 2 or 4 | For servo power |
-| GND | - | Pin 6, 9, or 14 | Common ground |
+| Component    | GPIO (BCM) | Physical Pin    | Notes               |
+| ------------ | ---------- | --------------- | ------------------- |
+| Green LED    | GPIO 17    | Pin 11          | Good bale indicator |
+| Red LED      | GPIO 27    | Pin 13          | Bad bale indicator  |
+| Servo Signal | GPIO 18    | Pin 12          | PWM-capable pin     |
+| 5V Power     | -          | Pin 2 or 4      | For servo power     |
+| GND          | -          | Pin 6, 9, or 14 | Common ground       |
 
 ### Detailed Wiring
 
 #### Servo Motor (3 wires)
+
 1. **Red wire** → Pi **5V** (Physical Pin 2 or 4)
 2. **Brown/Black wire** → Pi **GND** (Physical Pin 6, 9, or 14)
 3. **Orange/Yellow/White wire** → **GPIO 18** (Physical Pin 12)
 
 #### Green LED (Good indicator)
+
 1. **Long leg (anode)** → One side of **220Ω resistor**
 2. **Other side of resistor** → **GPIO 17** (Physical Pin 11)
 3. **Short leg (cathode)** → **GND** (same GND rail as servo)
 
 #### Red LED (Bad indicator)
+
 1. **Long leg (anode)** → One side of **220Ω resistor**
 2. **Other side of resistor** → **GPIO 27** (Physical Pin 13)
 3. **Short leg (cathode)** → **GND** (same GND rail)
 
 #### Camera
+
 - Connect Raspberry Pi Camera Module ribbon cable to the **CSI port** on the Pi
 - Make sure camera is enabled in `raspi-config`:
   ```bash
@@ -75,6 +79,7 @@ The system takes a photo, analyzes the color, and automatically routes items whi
 ```
 
 **Key pins for this project:**
+
 - Pin 11 (GPIO 17) → Green LED
 - Pin 12 (GPIO 18) → Servo signal
 - Pin 13 (GPIO 27) → Red LED
@@ -130,11 +135,28 @@ sudo reboot
 
 ## 💻 Usage
 
+### Testing Hardware First
+
+Before running the main demo, test all hardware components:
+
+```bash
+python3 test_hardware.py
+```
+
+This will test:
+- Camera (takes a test photo)
+- Green LED (blinks)
+- Red LED (blinks)
+- Servo motor (sweeps through angles)
+
+Fix any issues before proceeding to the main demo.
+
 ### Running the Demo Script
 
 The main demo script scans items when you press Enter:
 
 **If using virtual environment:**
+
 ```bash
 cd ~/FiberTrace
 source venv/bin/activate
@@ -142,11 +164,13 @@ python3 fibertrace_demo.py
 ```
 
 **If installed system-wide:**
+
 ```bash
 python3 fibertrace_demo.py
 ```
 
 **Instructions:**
+
 1. Place white or blue paper under the camera
 2. Press ENTER in the terminal to scan
 3. Watch LEDs light up, servo move, and dashboard update
@@ -156,6 +180,7 @@ python3 fibertrace_demo.py
 In a separate terminal (or run in background):
 
 **If using virtual environment:**
+
 ```bash
 cd ~/FiberTrace
 source venv/bin/activate
@@ -163,11 +188,13 @@ python3 app.py
 ```
 
 **If installed system-wide:**
+
 ```bash
 python3 app.py
 ```
 
 Then open a web browser and navigate to:
+
 - **Local:** http://localhost:5000
 - **From another device:** http://<raspberry-pi-ip>:5000
 
@@ -209,21 +236,25 @@ Adjust these angles based on your physical setup.
 ## 🐛 Troubleshooting
 
 ### Camera not working
+
 - Check camera connection and enable in `raspi-config`
 - Try different camera index: `cv2.VideoCapture(1)` instead of `0`
 - For libcamera: `cv2.VideoCapture(0, cv2.CAP_V4L2)`
 
 ### Servo not moving
+
 - Check wiring (signal to GPIO 18, power to 5V, ground to GND)
 - If Pi reboots when servo moves, use external 5V power supply
 - Verify servo is getting power (red wire to 5V)
 
 ### LEDs not lighting
+
 - Check resistor is connected (220Ω-330Ω)
 - Verify GPIO pins (17 for green, 27 for red)
 - Test with multimeter if needed
 
 ### Flask dashboard not accessible
+
 - Make sure firewall allows port 5000: `sudo ufw allow 5000`
 - Check Pi's IP address: `hostname -I`
 - Ensure `fibertrace_demo.py` has run at least once to create data file
@@ -257,4 +288,3 @@ This project is open source and available for educational purposes.
 ## 👥 Credits
 
 Built for automated cotton bale quality control using Raspberry Pi and computer vision.
-
