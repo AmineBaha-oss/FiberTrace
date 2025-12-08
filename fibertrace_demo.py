@@ -181,12 +181,12 @@ def capture_frame_fallback(path="frame.jpg", retries=3):
                 time.sleep(delay)
             
             # Take 1 snapshot with the Pi camera (1000ms timeout)
-            # Suppress stderr to hide harmless libcamera warnings
+            # Suppress stdout and stderr to hide harmless libcamera warnings
             env = os.environ.copy()
             env['GST_DEBUG'] = '0'  # Suppress GStreamer warnings
             cmd = ["rpicam-jpeg", "-o", path, "-t", "1000"]
-            result = subprocess.run(cmd, check=True, capture_output=True, timeout=5, 
-                                  stderr=subprocess.DEVNULL, env=env)
+            result = subprocess.run(cmd, check=True, timeout=5, 
+                                  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env)
             
             # Read the image
             img = cv2.imread(path)
