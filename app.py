@@ -86,10 +86,26 @@ def perform_scan():
     global camera_cap, servo_pwm
     
     try:
-        # Get frame
+        # Small delay to help with camera busy errors
+        time.sleep(0.2)
+        
+        # Get frame with retry logic
         frame = get_frame(camera_cap)
+        
+        # If frame capture failed, try reinitializing camera once
         if frame is None:
-            return {"success": False, "error": "Could not capture frame"}
+            print("WARNING: Frame capture failed, attempting to reinitialize camera...")
+            try:
+                if camera_cap is not None:
+                    camera_cap.release()
+                camera_cap = init_camera()
+                time.sleep(0.5)  # Give camera time to initialize
+                frame = get_frame(camera_cap)
+            except Exception as e:
+                print(f"ERROR: Camera reinitialization failed: {e}")
+        
+        if frame is None:
+            return {"success": False, "error": "Could not capture frame after retries and reinitialization"}
         
         # Save preview image
         cv2.imwrite(CAMERA_IMAGE_FILE, frame)

@@ -10,6 +10,9 @@ Controls:
 - Place either white or blue paper under the camera (scanner box).
 - Press ENTER in the terminal to trigger a scan.
 - Watch LEDs, servo gate, and text "dashboard" update.
+
+Note: OpenCV/GStreamer warnings about v4l2src are harmless on Raspberry Pi OS Bookworm.
+The system uses rpicam-jpeg as a fallback when OpenCV cannot access the camera directly.
 """
 
 import cv2
@@ -19,6 +22,10 @@ import RPi.GPIO as GPIO
 import json
 import os
 import subprocess
+
+# Suppress OpenCV warnings (harmless on Raspberry Pi OS Bookworm)
+import warnings
+warnings.filterwarnings('ignore', category=UserWarning)
 
 # ------------------------
 # GPIO PIN CONFIG
@@ -156,31 +163,65 @@ def init_camera(camera_index=0):
     
     return cap  # May be None - that's OK, we have fallback
 
-def capture_frame_fallback(path="frame.jpg"):
+def capture_frame_fallback(path="frame.jpg", retries=3):
     """
     Fallback: Use rpicam-jpeg to capture a single frame.
     Works on Raspberry Pi OS Bookworm when OpenCV can't access /dev/video0.
+    Includes retry logic for busy camera errors.
     """
     import subprocess
-    try:
-        # Take 1 snapshot with the Pi camera (1000ms timeout)
-        cmd = ["rpicam-jpeg", "-o", path, "-t", "1000"]
-        subprocess.run(cmd, check=True, capture_output=True, timeout=5)
-        img = cv2.imread(path)
-        if img is not None:
-            return img
-        else:
-            print("ERROR: Could not read image from rpicam-jpeg")
+    import os
+    
+    for attempt in range(retries):
+        try:
+            # Small delay before retry (except first attempt)
+            if attempt > 0:
+                delay = 0.5 * (attempt + 1)  # Exponential backoff: 1.0s, 1.5s, 2.0s
+                print(f"Retrying camera capture in {delay:.1f}s... (attempt {attempt + 1}/{retries})")
+                time.sleep(delay)
+            
+            # Take 1 snapshot with the Pi camera (1000ms timeout)
+            # Suppress stderr to hide harmless libcamera warnings
+            env = os.environ.copy()
+            env['GST_DEBUG'] = '0'  # Suppress GStreamer warnings
+            cmd = ["rpicam-jpeg", "-o", path, "-t", "1000"]
+            result = subprocess.run(cmd, check=True, capture_output=True, timeout=5, 
+                                  stderr=subprocess.DEVNULL, env=env)
+            
+            # Read the image
+            img = cv2.imread(path)
+            if img is not None:
+                return img
+            else:
+                if attempt < retries - 1:
+                    continue
+                else:
+                    print("ERROR: Could not read image from rpicam-jpeg after all retries")
+                    return None
+                    
+        except subprocess.CalledProcessError as e:
+            if attempt < retries - 1:
+                continue  # Will retry
+            else:
+                print(f"ERROR: rpicam-jpeg failed after {retries} attempts (exit code {e.returncode})")
+                return None
+        except subprocess.TimeoutExpired:
+            if attempt < retries - 1:
+                continue  # Will retry
+            else:
+                print(f"ERROR: rpicam-jpeg timed out after {retries} attempts")
+                return None
+        except FileNotFoundError:
+            print("ERROR: rpicam-jpeg not found. Install: sudo apt install -y rpicam-apps")
             return None
-    except subprocess.CalledProcessError as e:
-        print(f"ERROR: rpicam-jpeg failed: {e}")
-        return None
-    except FileNotFoundError:
-        print("ERROR: rpicam-jpeg not found. Install: sudo apt install -y rpicam-apps")
-        return None
-    except Exception as e:
-        print(f"ERROR: rpicam-jpeg exception: {e}")
-        return None
+        except Exception as e:
+            if attempt < retries - 1:
+                continue  # Will retry
+            else:
+                print(f"ERROR: rpicam-jpeg exception after {retries} attempts: {e}")
+                return None
+    
+    return None
 
 def get_frame(cap):
     """
