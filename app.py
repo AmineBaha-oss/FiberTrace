@@ -96,10 +96,19 @@ def perform_scan():
         if frame is None:
             print("WARNING: Frame capture failed, attempting to reinitialize camera...")
             try:
+                # Kill any stuck camera processes first
+                try:
+                    subprocess.run(['pkill', '-f', 'rpicam'], 
+                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    time.sleep(0.5)
+                except:
+                    pass
+                
                 if camera_cap is not None:
                     camera_cap.release()
+                time.sleep(1.0)  # Give camera time to release
                 camera_cap = init_camera()
-                time.sleep(0.5)  # Give camera time to initialize
+                time.sleep(1.0)  # Give camera time to initialize
                 frame = get_frame(camera_cap)
             except Exception as e:
                 print(f"ERROR: Camera reinitialization failed: {e}")

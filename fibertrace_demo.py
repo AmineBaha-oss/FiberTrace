@@ -163,7 +163,18 @@ def init_camera(camera_index=0):
     
     return cap  # May be None - that's OK, we have fallback
 
-def capture_frame_fallback(path="frame.jpg", retries=3):
+def kill_stuck_camera_processes():
+    """Kill any stuck rpicam processes that might be locking the camera."""
+    import subprocess
+    try:
+        # Find and kill any rpicam processes
+        result = subprocess.run(['pkill', '-f', 'rpicam'], 
+                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        time.sleep(0.3)  # Give processes time to terminate
+    except:
+        pass  # pkill might not be available, that's OK
+
+def capture_frame_fallback(path="frame.jpg", retries=5):
     """
     Fallback: Use rpicam-jpeg to capture a single frame.
     Works on Raspberry Pi OS Bookworm when OpenCV can't access /dev/video0.
@@ -174,18 +185,25 @@ def capture_frame_fallback(path="frame.jpg", retries=3):
     
     for attempt in range(retries):
         try:
-            # Small delay before retry (except first attempt)
+            # Small delay before each attempt (including first)
             if attempt > 0:
-                delay = 0.5 * (attempt + 1)  # Exponential backoff: 1.0s, 1.5s, 2.0s
+                delay = 1.0 * attempt  # Exponential backoff: 1.0s, 2.0s, 3.0s, 4.0s
                 print(f"Retrying camera capture in {delay:.1f}s... (attempt {attempt + 1}/{retries})")
                 time.sleep(delay)
+                
+                # Kill any stuck camera processes before retry
+                if attempt >= 2:  # Only kill processes after 2 failed attempts
+                    kill_stuck_camera_processes()
+            else:
+                # Small delay even on first attempt to help with busy camera
+                time.sleep(0.3)
             
             # Take 1 snapshot with the Pi camera (1000ms timeout)
             # Suppress stdout and stderr to hide harmless libcamera warnings
             env = os.environ.copy()
             env['GST_DEBUG'] = '0'  # Suppress GStreamer warnings
             cmd = ["rpicam-jpeg", "-o", path, "-t", "1000"]
-            result = subprocess.run(cmd, check=True, timeout=5, 
+            result = subprocess.run(cmd, check=True, timeout=8, 
                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env)
             
             # Read the image
