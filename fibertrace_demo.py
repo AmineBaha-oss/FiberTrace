@@ -385,8 +385,8 @@ def main():
             save_data()
             print_dashboard()
             
-            # Small delay, then turn off LEDs and center gate if you want
-            time.sleep(1.0)
+            # Keep servo in position for 2 seconds before resetting
+            time.sleep(2.0)
             GPIO.output(GREEN_LED_PIN, GPIO.LOW)
             GPIO.output(RED_LED_PIN, GPIO.LOW)
             move_gate(CENTER_ANGLE, servo_pwm)

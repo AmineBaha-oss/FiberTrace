@@ -144,8 +144,8 @@ def perform_scan():
         with open(DATA_FILE, 'w') as f:
             json.dump(data, f)
         
-        # Reset after 1 second
-        time.sleep(1.0)
+        # Keep servo in position for 2 seconds before resetting
+        time.sleep(2.0)
         GPIO.output(GREEN_LED_PIN, GPIO.LOW)
         GPIO.output(RED_LED_PIN, GPIO.LOW)
         if servo_pwm:
