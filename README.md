@@ -2,7 +2,7 @@
 
 A Raspberry Pi-based IoT device that automatically classifies textile materials as pure cotton (good) or poly-blend (bad) using computer vision, then routes them to the appropriate bin using a servo-controlled gate. Features a professional industrial web dashboard for real-time monitoring and control.
 
-## 🎯 What It Does
+##  What It Does
 
 - **White/Light materials** = GOOD (pure cotton) → Green LED + Gate to Good bin
 - **Blue/Dark materials** = BAD (poly-blend) → Red LED + Gate to Bad bin
@@ -15,7 +15,7 @@ The system:
 - Tracks statistics in real-time
 - Provides a professional web dashboard for monitoring and control
 
-## 📋 Hardware Requirements
+##  Hardware Requirements
 
 - Raspberry Pi (any model with GPIO pins)
 - Raspberry Pi Camera Module (or USB webcam)
@@ -25,7 +25,7 @@ The system:
 - Breadboard and jumper wires
 - Power supply for Raspberry Pi
 
-## 🔌 Wiring Instructions
+##  Wiring Instructions
 
 ### GPIO Pin Mapping (BCM Mode)
 
@@ -92,7 +92,7 @@ The system:
 - Pin 2 or 4 → 5V (servo power)
 - Pin 6, 9, or 14 → GND
 
-## 🚀 Installation
+##  Installation
 
 ### 1. Clone the Repository
 
@@ -138,7 +138,7 @@ After reboot, verify camera works:
 libcamera-hello -t 0
 ```
 
-## 💻 Usage
+##  Usage
 
 ### Step 1: Test Hardware
 
@@ -221,7 +221,7 @@ python3 fibertrace_demo.py
 
 **Note:** The Flask dashboard and terminal script share the same data file, so you can run both simultaneously if desired.
 
-## 📊 Features
+##  Features
 
 ### Core Functionality
 
@@ -286,7 +286,7 @@ CENTER_ANGLE = 90  # Neutral position
 
 Adjust these angles based on your physical setup.
 
-## 🐛 Troubleshooting
+##  Troubleshooting
 
 ### Camera not working
 
@@ -331,7 +331,7 @@ Adjust these angles based on your physical setup.
 - Check that data file exists: `ls fibertrace_data.json`
 - Try scanning an item to create/update the data file
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 FiberTrace/
@@ -346,7 +346,7 @@ FiberTrace/
 └── fibertrace_data.json  # Statistics data (created at runtime)
 ```
 
-## 🌐 Web Dashboard Access
+##  Web Dashboard Access
 
 Once Flask is running, access the dashboard from:
 
@@ -358,7 +358,7 @@ To find your Pi's IP:
 hostname -I
 ```
 
-## 🔮 Future Enhancements
+##  Future Enhancements
 
 - Button trigger instead of Enter key
 - Automatic conveyor belt detection
@@ -369,11 +369,11 @@ hostname -I
 - Modular refactoring (like YVLSWITCH project)
 - Real-time video feed option
 
-## 📝 License
+##  License
 
 This project is open source and available for educational purposes.
 
-## 👥 Credits
+##  Credits
 
 Built for automated textile sorting and quality control using Raspberry Pi and computer vision.
 
